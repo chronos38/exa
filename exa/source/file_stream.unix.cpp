@@ -193,7 +193,7 @@ namespace exa
     {
         if (context_->file != -1)
         {
-            close(context_->file);
+            ::close(context_->file);
             context_->file = -1;
         }
     }
@@ -217,7 +217,7 @@ namespace exa
 
         validate_descriptor(context_->file);
 
-        auto n = read(context_->file, buffer.data(), static_cast<size_t>(buffer.size()));
+        auto n = ::read(context_->file, buffer.data(), static_cast<size_t>(buffer.size()));
 
         if (n == -1)
         {
@@ -293,7 +293,7 @@ namespace exa
 
         validate_descriptor(context_->file);
 
-        auto n = write(context_->file, buffer.data(), static_cast<size_t>(buffer.size()));
+        auto n = ::write(context_->file, buffer.data(), static_cast<size_t>(buffer.size()));
 
         if (n == -1)
         {

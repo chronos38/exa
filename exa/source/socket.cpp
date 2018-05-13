@@ -274,7 +274,11 @@ namespace exa
     {
         validate_native_handle(socket_);
         sockaddr_storage storage = {0};
+#ifdef _WIN32
         int length = sizeof(storage);
+#else
+        socklen_t length = sizeof(storage);
+#endif
         auto rc = getsockname(socket_, reinterpret_cast<sockaddr*>(&storage), &length);
 
         if (rc != 0)
@@ -289,7 +293,11 @@ namespace exa
     {
         validate_native_handle(socket_);
         sockaddr_storage storage = {0};
+#ifdef _WIN32
         int length = sizeof(storage);
+#else
+        socklen_t length = sizeof(storage);
+#endif
         auto rc = getpeername(socket_, reinterpret_cast<sockaddr*>(&storage), &length);
 
         if (rc != 0)
@@ -332,7 +340,7 @@ namespace exa
 #else
         auto timeout = get_socket_option<timeval>(SOL_SOCKET, SO_SNDTIMEO);
         auto s = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::seconds(timeout.tv_sec));
-        auto us = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::microseconds(timeout.tv_sec));
+        auto us = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::microseconds(timeout.tv_usec));
         return s + us;
 #endif
     }
@@ -346,8 +354,8 @@ namespace exa
         timeval timeout;
         timeout.tv_sec =
             static_cast<decltype(timeout.tv_sec)>(std::chrono::duration_cast<std::chrono::seconds>(value).count());
-        timeout.tv_sec = std::clamp<decltype(timeout.tv_usec)>(
-            std::chrono::duration_cast<std::chrono::microseconds>(value).count(), 0, 999999);
+        timeout.tv_usec = std::clamp<decltype(timeout.tv_usec)>(
+            std::chrono::duration_cast<std::chrono::microseconds>(value).count(), -999999, 999999);
         set_socket_option(SOL_SOCKET, SO_SNDTIMEO, timeout);
 #endif
     }
@@ -360,7 +368,7 @@ namespace exa
 #else
         auto timeout = get_socket_option<timeval>(SOL_SOCKET, SO_RCVTIMEO);
         auto s = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::seconds(timeout.tv_sec));
-        auto us = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::microseconds(timeout.tv_sec));
+        auto us = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::microseconds(timeout.tv_usec));
         return s + us;
 #endif
     }
@@ -374,8 +382,8 @@ namespace exa
         timeval timeout;
         timeout.tv_sec =
             static_cast<decltype(timeout.tv_sec)>(std::chrono::duration_cast<std::chrono::seconds>(value).count());
-        timeout.tv_sec = std::clamp<decltype(timeout.tv_usec)>(
-            std::chrono::duration_cast<std::chrono::microseconds>(value).count(), 0, 999999);
+        timeout.tv_usec = std::clamp<decltype(timeout.tv_usec)>(
+            std::chrono::duration_cast<std::chrono::microseconds>(value).count(), -999999, 999999);
         set_socket_option(SOL_SOCKET, SO_RCVTIMEO, timeout);
 #endif
     }
@@ -385,7 +393,11 @@ namespace exa
         validate_native_handle(socket_);
 
         sockaddr_storage storage = {0};
+#ifdef _WIN32
         int length = sizeof(storage);
+#else
+        socklen_t length = sizeof(storage);
+#endif
         auto s = ::accept(socket_, reinterpret_cast<sockaddr*>(&storage), &length);
 
         if (!is_valid_native_handle(s))
@@ -434,7 +446,7 @@ namespace exa
 #else
         if (socket_ != -1)
         {
-            close(socket_);
+            ::close(socket_);
             socket_ = -1;
         }
 #endif
@@ -543,7 +555,7 @@ namespace exa
         timeout.tv_sec =
             static_cast<decltype(timeval::tv_sec)>(std::chrono::duration_cast<std::chrono::seconds>(us).count());
         timeout.tv_usec =
-            std::clamp<decltype(timeval::tv_usec)>(static_cast<decltype(timeval::tv_usec)>(us.count()), 0, 999999);
+            std::clamp<decltype(timeval::tv_usec)>(static_cast<decltype(timeval::tv_usec)>(us.count()), -999999, 999999);
 
 #ifdef _WIN32
         int nfds = 0;
@@ -603,7 +615,11 @@ namespace exa
         }
 
         sockaddr_storage storage = {0};
-        int length = sizeof(sockaddr_storage);
+#ifdef _WIN32
+        int length = sizeof(storage);
+#else
+        socklen_t length = sizeof(storage);
+#endif
         auto n = recvfrom(socket_, reinterpret_cast<char*>(buffer.data()), static_cast<int>(buffer.size()),
                           static_cast<std::underlying_type_t<socket_flags>>(flags), reinterpret_cast<sockaddr*>(&storage),
                           &length);
@@ -712,7 +728,7 @@ namespace exa
         timeout.tv_sec =
             static_cast<decltype(timeval::tv_sec)>(std::chrono::duration_cast<std::chrono::seconds>(us).count());
         timeout.tv_usec =
-            std::clamp<decltype(timeval::tv_usec)>(static_cast<decltype(timeval::tv_usec)>(us.count()), 0, 999999);
+            std::clamp<decltype(timeval::tv_usec)>(static_cast<decltype(timeval::tv_usec)>(us.count()), -999999, 999999);
 
         fd_set readset;
         FD_ZERO(&readset);
@@ -775,7 +791,7 @@ namespace exa
             return true;
         }
 #else
-        auto s = socket(static_cast<std::underlying_type_t<address_family>>(family), SOCK_DGRAM, 0);
+        auto s = ::socket(static_cast<std::underlying_type_t<address_family>>(family), SOCK_DGRAM, 0);
 
         if (s == -1)
         {
@@ -783,7 +799,7 @@ namespace exa
         }
         else
         {
-            close(s);
+            ::close(s);
             return true;
         }
 #endif

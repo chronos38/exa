@@ -1,4 +1,5 @@
 #include <exa/task.hpp>
+#include <functional>
 
 namespace exa
 {

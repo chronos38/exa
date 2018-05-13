@@ -402,16 +402,26 @@ TEST(network_stream_test, timeout_valid_data_roundtrip)
     server_stream->read_timeout(100ms);
     ASSERT_EQ(100ms, server_stream->read_timeout());
 
+#ifdef _WIN32
     server_stream->read_timeout(-1ms);
     ASSERT_EQ(-1ms, server_stream->read_timeout());
+#else
+    server_stream->read_timeout(0ms);
+    ASSERT_EQ(0ms, server_stream->read_timeout());
+#endif
 
     server_stream->write_timeout(100ms);
     ASSERT_EQ(100ms, server_stream->write_timeout());
     server_stream->write_timeout(100ms);
     ASSERT_EQ(100ms, server_stream->write_timeout());
 
+#ifdef _WIN32
     server_stream->write_timeout(-1ms);
     ASSERT_EQ(-1ms, server_stream->write_timeout());
+#else
+    server_stream->write_timeout(0ms);
+    ASSERT_EQ(0ms, server_stream->write_timeout());
+#endif
 }
 
 TEST(network_stream_test, copy_to_async_all_data_copied)

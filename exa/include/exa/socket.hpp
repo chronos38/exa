@@ -30,7 +30,7 @@ namespace exa
 #ifdef _WIN32
         using native_handle_type = SOCKET;
 #else
-        using native_socket_type = int;
+        typedef int native_handle_type;
 #endif
 
         socket() = delete;
@@ -110,8 +110,13 @@ namespace exa
         T get_socket_option(int level, int option) const
         {
             T value = T();
+#ifdef _WIN32
             int length = sizeof(T);
             auto rc = getsockopt(socket_, level, option, reinterpret_cast<char*>(&value), &length);
+#else
+            socklen_t length = sizeof(T);
+            auto rc = getsockopt(socket_, level, option, reinterpret_cast<int*>(&value), &length);
+#endif
 
             if (rc != 0)
             {
@@ -124,7 +129,12 @@ namespace exa
         template <class T>
         void set_socket_option(int level, int option, const T& value) const
         {
+#ifdef _WIN32
             auto rc = setsockopt(socket_, level, option, reinterpret_cast<const char*>(&value), sizeof(T));
+#else
+            auto rc =
+                setsockopt(socket_, level, option, reinterpret_cast<const int*>(&value), static_cast<socklen_t>(sizeof(T)));
+#endif
 
             if (rc != 0)
             {

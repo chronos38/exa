@@ -1,0 +1,11 @@
+{
+    "editor.formatOnSave": true,
+    "files.associations": {
+        "functional": "cpp",
+        "ratio": "cpp",
+        "system_error": "cpp",
+        "type_traits": "cpp",
+        "multi_span": "cpp",
+        "*.ipp": "cpp"
+    }
+}

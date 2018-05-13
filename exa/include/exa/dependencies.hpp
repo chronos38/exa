@@ -63,6 +63,7 @@ namespace exa
 #include <sys/stat.h>
 #include <sys/socket.h>
 #include <sys/ioctl.h>
+#include <sys/file.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
 #include <arpa/inet.h>

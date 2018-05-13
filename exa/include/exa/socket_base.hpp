@@ -18,7 +18,11 @@ namespace exa
     {
         unspecified = 0,
         ip = IPPROTO_IP,
+#ifdef _WIN32
         ip_v4 = IPPROTO_IPV4,
+#else
+        ip_v4 = IPPROTO_IP,
+#endif
         ip_v6 = IPPROTO_IPV6,
         tcp = IPPROTO_TCP,
         udp = IPPROTO_UDP,
@@ -46,7 +50,7 @@ namespace exa
         inter_network = AF_INET,
         inter_network_v6 = AF_INET6,
         apple_talk = AF_APPLETALK,
-        unix = AF_UNIX,
+        unix_descriptor = AF_UNIX,
         ipx = AF_IPX
     };
 

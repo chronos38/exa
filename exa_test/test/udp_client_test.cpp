@@ -20,10 +20,10 @@ TEST(udp_client_test, ctor_invalid_address_family_throws)
 {
     ASSERT_THROW(udp_client c(address_family::unspecified), std::invalid_argument);
     ASSERT_THROW(udp_client c(address_family::apple_talk), std::invalid_argument);
-    ASSERT_THROW(udp_client c(address_family::unix), std::invalid_argument);
+    ASSERT_THROW(udp_client c(address_family::unix_descriptor), std::invalid_argument);
 }
 
-TEST(udp_client_test, DISABLED_ctor_invalid_host_name_throws)
+TEST(udp_client_test, ctor_invalid_host_name_throws)
 {
     ASSERT_THROW(udp_client c("foo", 0), std::runtime_error);
 }
@@ -176,10 +176,14 @@ TEST(udp_client_test, send_invalid_arguments_string_int_throws)
 }
 #endif
 
-TEST(udp_client_test, connect_invalid_arguments_throws)
+TEST(udp_client_test, connect_invalid_arguments_windows_throws_unix_no_throw)
 {
     udp_client c;
+#ifdef _WIN32
     ASSERT_THROW(c.connect(endpoint{}), std::runtime_error);
+#else
+    ASSERT_NO_THROW(c.connect(endpoint{}));
+#endif
 }
 
 TEST(udp_client_test, connect_async_address_host_success)

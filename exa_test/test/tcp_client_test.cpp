@@ -14,7 +14,7 @@ TEST(tcp_client_test, ctor_invalid_family_throws)
 {
     ASSERT_THROW(tcp_client c(address_family::apple_talk), std::invalid_argument);
     ASSERT_THROW(tcp_client c(address_family::ipx), std::invalid_argument);
-    ASSERT_THROW(tcp_client c(address_family::unix), std::invalid_argument);
+    ASSERT_THROW(tcp_client c(address_family::unix_descriptor), std::invalid_argument);
     ASSERT_THROW(tcp_client c(address_family::unspecified), std::invalid_argument);
 }
 
@@ -141,10 +141,10 @@ TEST(tcp_client_test, roundtrip_receive_buffer_size_get_equals_set)
     tcp_client c;
 
     c.receive_buffer(4096);
-    ASSERT_EQ(4096, c.receive_buffer());
+    ASSERT_LE(4096, c.receive_buffer());
 
     c.receive_buffer(8192);
-    ASSERT_EQ(8192, c.receive_buffer());
+    ASSERT_LE(8192, c.receive_buffer());
 }
 
 TEST(tcp_client_test, roundtrip_send_buffer_size_get_equals_set)
@@ -152,10 +152,10 @@ TEST(tcp_client_test, roundtrip_send_buffer_size_get_equals_set)
     tcp_client c;
 
     c.send_buffer(4096);
-    ASSERT_EQ(4096, c.send_buffer());
+    ASSERT_LE(4096, c.send_buffer());
 
     c.send_buffer(8192);
-    ASSERT_EQ(8192, c.send_buffer());
+    ASSERT_LE(8192, c.send_buffer());
 }
 
 TEST(tcp_client_test, roundtrip_receive_timeout_get_equals_set)
@@ -163,7 +163,7 @@ TEST(tcp_client_test, roundtrip_receive_timeout_get_equals_set)
     tcp_client c;
 
     c.receive_timeout(1ms);
-    ASSERT_EQ(1ms, c.receive_timeout());
+    ASSERT_LE(1ms, c.receive_timeout());
 
     c.receive_timeout(0ms);
     ASSERT_EQ(0ms, c.receive_timeout());
@@ -174,7 +174,7 @@ TEST(tcp_client_test, roundtrip_send_timeout_get_equals_set)
     tcp_client c;
 
     c.send_timeout(1ms);
-    ASSERT_EQ(1ms, c.send_timeout());
+    ASSERT_LE(1ms, c.send_timeout());
 
     c.send_timeout(0ms);
     ASSERT_EQ(0ms, c.send_timeout());
@@ -195,8 +195,8 @@ TEST(tcp_client_test, properties_persist_after_connect)
 
     ASSERT_TRUE(c.linger_state().enabled);
     ASSERT_EQ(1s, c.linger_state().linger_time);
-    ASSERT_EQ(42ms, c.receive_timeout());
-    ASSERT_EQ(84ms, c.send_timeout());
+    ASSERT_LE(42ms, c.receive_timeout());
+    ASSERT_LE(84ms, c.send_timeout());
 }
 
 TEST(tcp_client_test, close_cancels_connect_async)

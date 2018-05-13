@@ -91,6 +91,8 @@ namespace exa
                 inet_ntop(AF_INET6, &addr, str, INET6_ADDRSTRLEN);
                 break;
             }
+            default:
+                throw std::runtime_error("Unsupported address family.");
         }
 
         return str;

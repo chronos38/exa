@@ -55,19 +55,19 @@ namespace exa
         virtual ~file_stream();
 
         // Inherited via stream
-        virtual bool can_read() const;
+        virtual bool can_read() const override;
 
-        virtual bool can_seek() const;
+        virtual bool can_seek() const override;
 
-        virtual bool can_write() const;
+        virtual bool can_write() const override;
 
-        virtual std::streamsize size() const;
+        virtual std::streamsize size() const override;
 
-        virtual std::streamoff position() const;
+        virtual std::streamoff position() const override;
 
-        virtual void position(std::streamoff value);
+        virtual void position(std::streamoff value) override;
 
-        virtual void close();
+        virtual void close() override;
 
         virtual void flush() override;
 
