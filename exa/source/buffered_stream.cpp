@@ -4,6 +4,10 @@ namespace exa
 {
     buffered_stream::buffered_stream(const std::shared_ptr<stream>& s, std::streamsize buffer_size) : stream_(s)
     {
+        if (s == nullptr)
+        {
+            throw std::invalid_argument("Given stream for buffered stream is nullptr.");
+        }
         if (buffer_size <= 0)
         {
             throw std::out_of_range("Buffer size for buffered stream needs to greater than 0.");
@@ -49,7 +53,15 @@ namespace exa
 
     void buffered_stream::flush()
     {
-        stream_->flush();
+        if (context_ == buffered_stream::buffer_context::write)
+        {
+            if (buffer_.size() > 0)
+            {
+                stream_->write({buffer_.data(), position_});
+                buffer_.resize(0);
+                position_ = 0;
+            }
+        }
     }
 
     std::streamsize buffered_stream::read(gsl::span<uint8_t> buffer)
@@ -116,9 +128,23 @@ namespace exa
 
     std::streamsize buffered_stream::read_buffered(gsl::span<uint8_t> buffer)
     {
-        if (context_ != buffer_context::read || position_ >= static_cast<std::streamoff>(buffer_.size()))
+        throw std::runtime_error("not implemented.");
+
+        if (context_ == buffer_context::write)
         {
+            if (buffer_.size() > 0)
+            {
+                stream_->write(buffer_);
+            }
+
             context_ = buffer_context::read;
+            buffer_.resize(buffer_.capacity());
+            auto n = stream_->read(buffer_);
+            buffer_.resize(static_cast<size_t>(n));
+            position_ = 0;
+        }
+        if (position_ >= static_cast<std::streamoff>(buffer_.size()))
+        {
             buffer_.resize(buffer_.capacity());
             auto n = stream_->read(buffer_);
             buffer_.resize(static_cast<size_t>(n));
@@ -133,13 +159,14 @@ namespace exa
 
     void buffered_stream::write_buffered(gsl::span<const uint8_t> buffer)
     {
+        throw std::runtime_error("not implemented.");
+
         if (context_ != buffer_context::write)
         {
             context_ = buffer_context::write;
             buffer_.resize(0);
             position_ = 0;
         }
-
         if (position_ + buffer.size() > static_cast<std::streamoff>(buffer_.capacity()))
         {
             stream_->write(gsl::span<const uint8_t>(buffer_));

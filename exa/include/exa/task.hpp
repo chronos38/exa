@@ -17,11 +17,11 @@ namespace exa
     {
     public:
         template <class Function, class = std::enable_if_t<std::is_void_v<std::invoke_result_t<Function>>>>
-        static std::future<void> run(Function&& f)
+        static constexpr std::future<void> run(Function&& f)
         {
+            static_assert(std::is_invocable_v<Function>);
             auto p = std::make_shared<std::promise<void>>();
-            {
-                std::unique_lock<lockable<>> lock(instance.task_queue_);
+            lock(instance.task_queue_, [&] {
                 instance.task_queue_.push_back([f, p] {
                     try
                     {
@@ -33,18 +33,18 @@ namespace exa
                         p->set_exception(std::current_exception());
                     }
                 });
-            }
+            });
             instance.task_signal_.notify_one();
             return p->get_future();
         }
 
         template <class Function, class = std::enable_if_t<!std::is_void_v<std::invoke_result_t<Function>>>>
-        static std::future<std::invoke_result_t<Function>> run(Function&& f)
+        static constexpr std::future<std::invoke_result_t<Function>> run(Function&& f)
         {
+            static_assert(std::is_invocable_v<Function>);
             using return_type = std::invoke_result_t<Function>;
             auto p = std::make_shared<std::promise<return_type>>();
-            {
-                std::unique_lock<lockable<>> lock(instance.task_queue_);
+            lock(instance.task_queue_, [&] {
                 instance.task_queue_.push_back([f, p] {
                     try
                     {
@@ -56,7 +56,7 @@ namespace exa
                         p->set_exception(std::current_exception());
                     }
                 });
-            }
+            });
             instance.task_signal_.notify_one();
             return p->get_future();
         }
@@ -68,8 +68,7 @@ namespace exa
     private:
         ~task();
         void shutdown();
-
-        static void work();
+        void work();
 
         struct task_queue : public std::deque<std::function<void()>>, public lockable<>
         {

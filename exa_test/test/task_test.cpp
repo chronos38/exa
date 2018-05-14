@@ -3,6 +3,16 @@
 
 using namespace exa;
 
+TEST(task_test, invalid_argument_throws)
+{
+    ASSERT_THROW(task::initialize(0), std::out_of_range);
+}
+
+TEST(task_test, already_running_task_throws)
+{
+    ASSERT_THROW(task::initialize(1), std::runtime_error);
+}
+
 TEST(task_test, init_deinit_several_times_success)
 {
     for (size_t i = 1; i <= 10; ++i)

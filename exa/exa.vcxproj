@@ -130,6 +130,7 @@
   <ItemGroup>
     <ClInclude Include="include\exa\address.hpp" />
     <ClInclude Include="include\exa\buffered_stream.hpp" />
+    <ClInclude Include="include\exa\concepts.hpp" />
     <ClInclude Include="include\exa\dependencies.hpp" />
     <ClInclude Include="include\exa\endpoint.hpp" />
     <ClInclude Include="include\exa\enum_flag.hpp" />
