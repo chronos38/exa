@@ -39,6 +39,16 @@ namespace exa
         return static_cast<std::streamoff>(buffer_.size());
     }
 
+    void memory_stream::size(std::streamsize value)
+    {
+        if (value < 0)
+        {
+            throw std::out_of_range("Length of memory stream can't be negative.");
+        }
+
+        buffer_.resize(static_cast<size_t>(value));
+    }
+
     std::streamoff memory_stream::position() const
     {
         return position_;
@@ -46,6 +56,11 @@ namespace exa
 
     void memory_stream::position(std::streamoff value)
     {
+        if (value < 0)
+        {
+            throw std::out_of_range("Can't set a negative stream position.");
+        }
+
         position_ = value;
     }
 
@@ -61,7 +76,13 @@ namespace exa
         }
 
         auto n = std::min<std::streamsize>(buffer_.size() - position_, b.size());
-        std::copy_n(std::begin(buffer_), n, std::begin(b));
+
+        if (n <= 0)
+        {
+            return 0;
+        }
+
+        std::copy_n(std::next(std::begin(buffer_), static_cast<ptrdiff_t>(position_)), n, std::begin(b));
         position_ += static_cast<std::streamoff>(n);
         return n;
     }
@@ -86,16 +107,6 @@ namespace exa
         return position_;
     }
 
-    void memory_stream::set_length(std::streamoff value)
-    {
-        if (value < 0)
-        {
-            throw std::out_of_range("Length of memory stream can't be negative.");
-        }
-
-        buffer_.resize(static_cast<size_t>(value));
-    }
-
     void memory_stream::write(gsl::span<const uint8_t> b)
     {
         if (b.data() == nullptr)
@@ -109,12 +120,6 @@ namespace exa
         {
             if (resizable_)
             {
-                if (static_cast<size_t>(new_position) > buffer_.capacity())
-                {
-                    buffer_.reserve(
-                        std::max<size_t>(static_cast<size_t>(new_position), static_cast<size_t>(buffer_.size() + 81920)));
-                }
-
                 buffer_.resize(static_cast<size_t>(new_position));
             }
             else
@@ -123,7 +128,7 @@ namespace exa
             }
         }
 
-        auto it = std::next(std::begin(buffer_), static_cast<std::ptrdiff_t>(position_));
+        auto it = std::next(std::begin(buffer_), static_cast<ptrdiff_t>(position_));
         std::copy(std::begin(b), std::end(b), it);
         position_ += b.size();
     }
@@ -136,5 +141,15 @@ namespace exa
     std::vector<uint8_t> memory_stream::to_array()
     {
         return buffer_;
+    }
+
+    size_t memory_stream::capacity() const
+    {
+        return buffer_.capacity();
+    }
+
+    void memory_stream::capacity(size_t n)
+    {
+        buffer_.reserve(n);
     }
 }

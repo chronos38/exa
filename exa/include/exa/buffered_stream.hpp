@@ -22,11 +22,11 @@ namespace exa
 
         virtual std::streamsize size() const override;
 
+        virtual void size(std::streamsize value) override;
+
         virtual std::streamoff position() const override;
 
         virtual void position(std::streamoff value) override;
-
-        virtual void close() override;
 
         virtual void flush() override;
 
@@ -34,25 +34,29 @@ namespace exa
 
         virtual std::streamoff seek(std::streamoff offset, seek_origin origin) override;
 
-        virtual void set_length(std::streamoff value) override;
-
         virtual void write(gsl::span<const uint8_t> buffer) override;
 
+        // Specific to buffered_stream
+        std::shared_ptr<stream> underlying_stream() const;
+
+        std::streamsize buffer_size() const;
+
     private:
+        void flush_write();
+
+        void flush_read();
+
         std::streamsize read_buffered(gsl::span<uint8_t> buffer);
 
-        void write_buffered(gsl::span<const uint8_t> buffer);
+        void write_buffered(gsl::span<const uint8_t>& buffer);
 
-        enum class buffer_context
-        {
-            none,
-            read,
-            write
-        };
+        void clear_read_buffer();
 
         std::shared_ptr<stream> stream_;
+        const std::streamsize buffer_size_ = 0;
         std::vector<uint8_t> buffer_;
-        std::streamoff position_ = 0;
-        buffer_context context_ = buffer_context::none;
+        std::streamsize read_size_ = 0;
+        std::streamoff read_pos_ = 0;
+        std::streamoff write_pos_ = 0;
     };
 }

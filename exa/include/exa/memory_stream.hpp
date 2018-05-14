@@ -28,6 +28,8 @@ namespace exa
 
         virtual std::streamsize size() const override;
 
+        virtual void size(std::streamsize value) override;
+
         virtual std::streamoff position() const override;
 
         virtual void position(std::streamoff value) override;
@@ -38,14 +40,16 @@ namespace exa
 
         virtual std::streamoff seek(std::streamoff offset, seek_origin origin) override;
 
-        virtual void set_length(std::streamoff value) override;
-
         virtual void write(gsl::span<const uint8_t> b) override;
 
         // Specific to memory_stream
         const std::vector<uint8_t>& buffer() const;
 
         virtual std::vector<uint8_t> to_array();
+
+        size_t capacity() const;
+
+        void capacity(size_t n);
 
     private:
         std::vector<uint8_t> buffer_;

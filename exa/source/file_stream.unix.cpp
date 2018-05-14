@@ -162,7 +162,7 @@ namespace exa
     std::streamsize file_stream::size() const
     {
         validate_descriptor(context_->file);
-        struct stat s;
+        struct stat s = {0};
 
         if (fstat(context_->file, &s) == -1)
         {
@@ -172,8 +172,40 @@ namespace exa
         return static_cast<std::streamsize>(s.st_size);
     }
 
+    void file_stream::size(std::streamsize value)
+    {
+        if (value < 0)
+        {
+            throw std::out_of_range("Length of buffered stream can't be negative.");
+        }
+
+        validate_descriptor(context_->file);
+
+        auto pos = position();
+        position(value);
+
+        if (ftruncate(context_->file, static_cast<off_t>(value)) == -1)
+        {
+            throw std::system_error(errno, std::system_category(), "ftruncate");
+        }
+
+        if (pos < value)
+        {
+            position(pos);
+        }
+        else
+        {
+            seek(0, seek_origin::end);
+        }
+    }
+
     std::streamoff file_stream::position() const
     {
+        if (value < 0)
+        {
+            throw std::out_of_range("Can't set a negative stream position.");
+        }
+
         validate_descriptor(context_->file);
         auto pos = lseek(context_->file, 0, SEEK_CUR);
         return static_cast<std::streamoff>(pos);
@@ -259,28 +291,6 @@ namespace exa
         else
         {
             return static_cast<std::streamoff>(pos);
-        }
-    }
-
-    void file_stream::set_length(std::streamoff value)
-    {
-        validate_descriptor(context_->file);
-
-        auto pos = position();
-        position(value);
-
-        if (ftruncate(context_->file, static_cast<off_t>(value)) == -1)
-        {
-            throw std::system_error(errno, std::system_category(), "ftruncate");
-        }
-
-        if (pos < value)
-        {
-            position(pos);
-        }
-        else
-        {
-            seek(0, seek_origin::end);
         }
     }
 

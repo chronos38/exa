@@ -70,6 +70,11 @@ namespace exa
         throw std::runtime_error("Getting size of network stream isn't supported.");
     }
 
+    void network_stream::size(std::streamoff)
+    {
+        throw std::runtime_error("Set length of network stream isn't supported.");
+    }
+
     std::streamoff network_stream::position() const
     {
         throw std::runtime_error("Getting position of network stream isn't supported.");
@@ -171,11 +176,6 @@ namespace exa
     std::streamoff network_stream::seek(std::streamoff, seek_origin)
     {
         throw std::runtime_error("Seeking of network stream isn't supported.");
-    }
-
-    void network_stream::set_length(std::streamoff)
-    {
-        throw std::runtime_error("Set length of network stream isn't supported.");
     }
 
     void network_stream::write(gsl::span<const uint8_t> buffer)

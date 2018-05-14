@@ -1,6 +1,7 @@
 #pragma once
 
 #include <exa/dependencies.hpp>
+#include <exa/lockable.hpp>
 
 #include <cstdint>
 #include <cstddef>
@@ -18,26 +19,28 @@ namespace exa
         end
     };
 
-    class stream
+    class stream : public lockable<>
     {
     public:
-        static constexpr std::streamsize default_buffer_size = 81920;
+        static constexpr std::streamsize default_buffer_size = 0x10000;
 
         virtual ~stream() = default;
 
-        virtual bool can_read() const;
+        virtual bool can_read() const = 0;
 
-        virtual bool can_seek() const;
+        virtual bool can_seek() const = 0;
 
         virtual bool can_timeout() const;
 
-        virtual bool can_write() const;
+        virtual bool can_write() const = 0;
 
-        virtual std::streamsize size() const;
+        virtual std::streamsize size() const = 0;
 
-        virtual std::streamoff position() const;
+        virtual void size(std::streamsize value) = 0;
 
-        virtual void position(std::streamoff value);
+        virtual std::streamoff position() const = 0;
+
+        virtual void position(std::streamoff value) = 0;
 
         virtual std::chrono::milliseconds read_timeout() const;
 
@@ -68,8 +71,6 @@ namespace exa
         virtual int32_t read_byte();
 
         virtual std::streamoff seek(std::streamoff offset, seek_origin origin) = 0;
-
-        virtual void set_length(std::streamoff value) = 0;
 
         virtual void write(gsl::span<const uint8_t> buffer) = 0;
 

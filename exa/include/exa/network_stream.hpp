@@ -27,6 +27,8 @@ namespace exa
 
         virtual std::streamsize size() const override;
 
+        virtual void size(std::streamsize value) override;
+
         virtual std::streamoff position() const override;
 
         virtual void position(std::streamoff value) override;
@@ -60,8 +62,6 @@ namespace exa
         virtual std::future<std::streamsize> read_async(gsl::span<uint8_t> buffer) override;
 
         virtual std::streamoff seek(std::streamoff offset, seek_origin origin) override;
-
-        virtual void set_length(std::streamoff value) override;
 
         virtual void write(gsl::span<const uint8_t> buffer) override;
 

@@ -8,56 +8,29 @@ using namespace std::literals::chrono_literals;
 
 namespace exa
 {
-    bool stream::can_read() const
-    {
-        return false;
-    }
-
-    bool stream::can_seek() const
-    {
-        return false;
-    }
-
     bool stream::can_timeout() const
     {
         return false;
     }
 
-    bool stream::can_write() const
-    {
-        return false;
-    }
-
-    std::streamsize stream::size() const
-    {
-        return 0;
-    }
-
-    std::streamoff stream::position() const
-    {
-        return 0;
-    }
-
-    void stream::position(std::streamoff)
-    {
-    }
-
     std::chrono::milliseconds stream::read_timeout() const
     {
-        return 0ms;
+        throw std::runtime_error("Stream doesn't support getting read timeout.");
     }
 
     void stream::read_timeout(const std::chrono::milliseconds&)
     {
+        throw std::runtime_error("Stream doesn't support setting read timeout.");
     }
 
     std::chrono::milliseconds stream::write_timeout() const
     {
-        return 0ms;
+        throw std::runtime_error("Stream doesn't support getting write timeout.");
     }
 
     void stream::write_timeout(const std::chrono::milliseconds&)
     {
+        throw std::runtime_error("Stream doesn't support setting write timeout.");
     }
 
     void stream::close()
@@ -113,7 +86,7 @@ namespace exa
         while (r > 0)
         {
             v.resize(static_cast<size_t>(r));
-            s->write(gsl::span<uint8_t>(v.data(), static_cast<std::ptrdiff_t>(r)));
+            s->write(gsl::span<uint8_t>(v.data(), static_cast<ptrdiff_t>(r)));
             v.resize(static_cast<size_t>(buffer_size));
             r = read(v);
         }

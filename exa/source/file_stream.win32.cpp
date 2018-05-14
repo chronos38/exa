@@ -116,6 +116,33 @@ namespace exa
         return static_cast<std::streamsize>(value.QuadPart);
     }
 
+    void file_stream::size(std::streamsize value)
+    {
+        if (value < 0)
+        {
+            throw std::out_of_range("Length of buffered stream can't be negative.");
+        }
+
+        validate_handle(context_->file);
+
+        auto pos = position();
+        position(value);
+
+        if (SetEndOfFile(context_->file) == FALSE)
+        {
+            throw std::system_error(static_cast<int>(GetLastError()), std::system_category(), "SetEndOfFile");
+        }
+
+        if (pos < value)
+        {
+            position(pos);
+        }
+        else
+        {
+            seek(0, seek_origin::end);
+        }
+    }
+
     std::streamoff file_stream::position() const
     {
         validate_handle(context_->file);
@@ -137,6 +164,11 @@ namespace exa
 
     void file_stream::position(std::streamoff value)
     {
+        if (value < 0)
+        {
+            throw std::out_of_range("Can't set a negative stream position.");
+        }
+
         validate_handle(context_->file);
 
         DWORD method = FILE_BEGIN;
@@ -217,28 +249,6 @@ namespace exa
         }
 
         return static_cast<std::streamoff>(location.QuadPart);
-    }
-
-    void file_stream::set_length(std::streamoff value)
-    {
-        validate_handle(context_->file);
-
-        auto pos = position();
-        position(value);
-
-        if (SetEndOfFile(context_->file) == FALSE)
-        {
-            throw std::system_error(static_cast<int>(GetLastError()), std::system_category(), "SetEndOfFile");
-        }
-
-        if (pos < value)
-        {
-            position(pos);
-        }
-        else
-        {
-            seek(0, seek_origin::end);
-        }
     }
 
     void file_stream::write(gsl::span<const uint8_t> buffer)

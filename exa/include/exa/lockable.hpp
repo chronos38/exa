@@ -11,6 +11,8 @@ namespace exa
     class lockable
     {
     public:
+        virtual ~lockable() = default;
+
         void lock()
         {
             mutex_.lock();
