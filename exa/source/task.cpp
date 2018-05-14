@@ -77,8 +77,8 @@ namespace exa
         }
 
         threads_.clear();
-        instance.waiting_ = 0;
-        instance.exited_ = 0;
+        waiting_ = 0;
+        exited_ = 0;
     }
 
     void task::work()
