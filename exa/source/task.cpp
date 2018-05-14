@@ -21,8 +21,6 @@ namespace exa
         }
 
         instance.run_ = true;
-        instance.waiting_ = 0;
-        instance.exited_ = 0;
 
         for (size_t i = 0; i < thread_count; ++i)
         {
@@ -33,6 +31,16 @@ namespace exa
     void task::deinitialize(const std::chrono::milliseconds& timeout)
     {
         instance.shutdown(timeout);
+    }
+
+    size_t task::available_tasks()
+    {
+        return static_cast<size_t>(instance.waiting_);
+    }
+
+    size_t task::total_tasks()
+    {
+        return instance.threads_.size();
     }
 
     task::task()
@@ -69,6 +77,8 @@ namespace exa
         }
 
         threads_.clear();
+        instance.waiting_ = 0;
+        instance.exited_ = 0;
     }
 
     void task::work()

@@ -65,6 +65,10 @@ namespace exa
 
         static void deinitialize(const std::chrono::milliseconds& timeout = std::chrono::milliseconds(100));
 
+        static size_t available_tasks();
+
+        static size_t total_tasks();
+
     private:
         task();
         ~task();
