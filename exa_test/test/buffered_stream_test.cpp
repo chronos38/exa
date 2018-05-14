@@ -85,7 +85,7 @@ namespace
     };
 }
 
-TEST(buffered_stream_test, concurrent_operation_are_serialized)
+TEST(buffered_stream_test, concurrent_operations_are_serialized)
 {
     auto v = create_data();
     auto inner = std::make_shared<concurrent_stream>();

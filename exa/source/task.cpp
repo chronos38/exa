@@ -3,6 +3,8 @@
 
 #include <functional>
 
+using namespace std::literals::chrono_literals;
+
 namespace exa
 {
     task task::instance;
@@ -19,6 +21,8 @@ namespace exa
         }
 
         instance.run_ = true;
+        instance.waiting_ = 0;
+        instance.exited_ = 0;
 
         for (size_t i = 0; i < thread_count; ++i)
         {
@@ -26,19 +30,30 @@ namespace exa
         }
     }
 
-    void task::deinitialize()
+    void task::deinitialize(const std::chrono::milliseconds& timeout)
     {
-        instance.shutdown();
+        instance.shutdown(timeout);
+    }
+
+    task::task()
+    {
+        waiting_ = 0;
+        exited_ = 0;
     }
 
     task::~task()
     {
-        shutdown();
+        shutdown(0ms);
     }
 
-    void task::shutdown()
+    void task::shutdown(const std::chrono::milliseconds& timeout)
     {
         run_ = false;
+
+        while ((waiting_ + exited_) != static_cast<int>(threads_.size()))
+        {
+            std::this_thread::sleep_for(timeout);
+        }
 
         lock(task_queue_, [this] {
             task_queue_.clear();
@@ -63,7 +78,9 @@ namespace exa
             std::function<void()> f;
 
             scope(std::unique_lock(task_queue_), [&](auto&& lock) {
+                waiting_ += 1;
                 task_signal_.wait(lock);
+                waiting_ -= 1;
 
                 if (!run_)
                 {
@@ -83,5 +100,7 @@ namespace exa
                 f();
             }
         }
+
+        exited_ += 1;
     }
 }

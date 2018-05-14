@@ -63,11 +63,12 @@ namespace exa
 
         static void initialize(std::size_t thread_count);
 
-        static void deinitialize();
+        static void deinitialize(const std::chrono::milliseconds& timeout = std::chrono::milliseconds(100));
 
     private:
+        task();
         ~task();
-        void shutdown();
+        void shutdown(const std::chrono::milliseconds& timeout);
         void work();
 
         struct task_queue : public std::deque<std::function<void()>>, public lockable<>
@@ -76,6 +77,8 @@ namespace exa
 
         static task instance;
         std::atomic_bool run_;
+        std::atomic_int waiting_;
+        std::atomic_int exited_;
         std::condition_variable_any task_signal_;
         std::vector<std::thread> threads_;
         task_queue task_queue_;
