@@ -87,12 +87,18 @@ namespace exa
             {
                 flush_read();
             }
-
-            stream_->flush();
+            if (stream_->can_write())
+            {
+                stream_->flush();
+            }
         }
         else
         {
-            stream_->flush();
+            if (stream_->can_write())
+            {
+                stream_->flush();
+            }
+
             write_pos_ = 0;
             read_pos_ = 0;
         }

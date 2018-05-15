@@ -42,7 +42,9 @@ namespace exa
         const std::shared_ptr<socket>& socket() const;
 
         void close();
+        void connect(const address& addr, uint16_t port);
         void connect(const endpoint& remote_ep);
+        void connect(const std::string& host, uint16_t port);
         std::vector<uint8_t> receive(endpoint& ep);
         std::future<udp_receive_result> receive_async();
         size_t send(gsl::span<const uint8_t> buffer);

@@ -169,9 +169,19 @@ namespace exa
         socket_->close();
     }
 
+    void udp_client::connect(const address& addr, uint16_t port)
+    {
+        socket_->connect(addr, port);
+    }
+
     void udp_client::connect(const endpoint& remote_ep)
     {
         socket_->connect(remote_ep);
+    }
+
+    void udp_client::connect(const std::string& host, uint16_t port)
+    {
+        socket_->connect(host, port);
     }
 
     std::vector<uint8_t> udp_client::receive(endpoint& ep)
