@@ -1,6 +1,7 @@
 #include <pch.h>
 #include <exa/buffered_stream.hpp>
 #include <exa/memory_stream.hpp>
+#include <exa/concepts.hpp>
 
 using namespace exa;
 using namespace testing;
@@ -47,17 +48,17 @@ namespace
         }
     };
 
-    struct concurrent_stream : public memory_stream, public detail::lockable<std::mutex>
+    struct concurrent_stream : public memory_stream, public lockable<std::mutex>
     {
         virtual void write(gsl::span<const uint8_t> b) override
         {
-            lock(*this, [&] { memory_stream::write(b); });
+            exa::lock(*this, [&] { memory_stream::write(b); });
         }
 
         virtual std::streamsize read(gsl::span<uint8_t> b) override
         {
             std::streamsize r = 0;
-            lock(*this, [&] { r = memory_stream::read(b); });
+            exa::lock(*this, [&] { r = memory_stream::read(b); });
             return r;
         }
     };

@@ -73,14 +73,7 @@ namespace exa
 
 #endif
 
-#include <gsl/gsl_algorithm>
-#include <gsl/gsl_assert>
-#include <gsl/gsl_byte>
-#include <gsl/gsl_util>
-#include <gsl/multi_span>
-#include <gsl/pointers>
-#include <gsl/span>
-#include <gsl/string_span>
+#include <gsl/gsl>
 
 #ifdef _WIN32
 #pragma warning(pop)

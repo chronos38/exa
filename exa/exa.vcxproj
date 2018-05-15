@@ -139,7 +139,6 @@
     <ClInclude Include="include\exa\endpoint.hpp" />
     <ClInclude Include="include\exa\enum_flag.hpp" />
     <ClInclude Include="include\exa\file_stream.hpp" />
-    <ClInclude Include="include\exa\lockable.hpp" />
     <ClInclude Include="include\exa\memory_stream.hpp" />
     <ClInclude Include="include\exa\network_stream.hpp" />
     <ClInclude Include="include\exa\socket.hpp" />
@@ -164,6 +163,17 @@
     <ClCompile Include="source\tcp_listener.cpp" />
     <ClCompile Include="source\task.cpp" />
     <ClCompile Include="source\udp_client.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="include\gsl\gsl" />
+    <None Include="include\gsl\gsl_algorithm" />
+    <None Include="include\gsl\gsl_assert" />
+    <None Include="include\gsl\gsl_byte" />
+    <None Include="include\gsl\gsl_util" />
+    <None Include="include\gsl\multi_span" />
+    <None Include="include\gsl\pointers" />
+    <None Include="include\gsl\span" />
+    <None Include="include\gsl\string_span" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

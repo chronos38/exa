@@ -1,6 +1,6 @@
 #pragma once
 
-#include <exa/lockable.hpp>
+#include <exa/concepts.hpp>
 
 #include <future>
 #include <condition_variable>
@@ -75,7 +75,7 @@ namespace exa
         void shutdown(const std::chrono::milliseconds& timeout);
         void work();
 
-        struct task_queue : public std::deque<std::function<void()>>, public lockable<>
+        struct task_queue : public std::deque<std::function<void()>>, public lockable<std::mutex>
         {
         };
 
