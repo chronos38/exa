@@ -1,6 +1,7 @@
 #include <pch.h>
 #include <exa/buffered_stream.hpp>
 #include <exa/memory_stream.hpp>
+#include <exa/lockable.hpp>
 
 using namespace exa;
 using namespace std::literals::chrono_literals;
@@ -46,7 +47,7 @@ namespace
         }
     };
 
-    struct concurrent_stream : public memory_stream
+    struct concurrent_stream : public memory_stream, public lockable<>
     {
         virtual void write(gsl::span<const uint8_t> b) override
         {
@@ -106,7 +107,9 @@ TEST(buffered_stream_test, concurrent_operations_are_serialized)
 
     for (size_t i = 0; i < tasks.size(); ++i)
     {
-        ASSERT_EQ(i, s->read_byte());
+        auto b = s->read_byte();
+        ASSERT_TRUE(b == i || b == static_cast<uint8_t>(i + 250) || b == static_cast<uint8_t>(i + 500) ||
+                    b == static_cast<uint8_t>(i + 750));
     }
 }
 

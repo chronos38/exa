@@ -1,7 +1,6 @@
 #pragma once
 
 #include <exa/dependencies.hpp>
-#include <exa/lockable.hpp>
 
 #include <cstdint>
 #include <cstddef>
@@ -19,7 +18,7 @@ namespace exa
         end
     };
 
-    class stream : public lockable<>
+    class stream
     {
     public:
         static constexpr std::streamsize default_buffer_size = 0x10000;
