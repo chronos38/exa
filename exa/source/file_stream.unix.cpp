@@ -315,7 +315,7 @@ namespace exa
         }
     }
 
-    std::string file_stream::name() const
+    const std::string& file_stream::name() const
     {
         validate_descriptor(context_->file);
         return context_->name;

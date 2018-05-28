@@ -1,6 +1,7 @@
 #ifdef _WIN32
 #include <exa/file_stream.hpp>
 #include <exa/enum_flag.hpp>
+#include <exa/concepts.hpp>
 
 namespace exa
 {
@@ -66,12 +67,22 @@ namespace exa
                            (has_flag(share, file_share::remove) ? FILE_SHARE_DELETE : 0);
         DWORD desired_access = context_->mode == file_mode::append
                                    ? FILE_APPEND_DATA
-                                   : (has_flag(access, file_access::read) ? FILE_GENERIC_READ : 0) |
-                                         (has_flag(access, file_access::write) ? FILE_GENERIC_WRITE : 0);
+                                   : (has_flag(access, file_access::read) ? GENERIC_READ : 0) |
+                                         (has_flag(access, file_access::write) ? GENERIC_WRITE : 0);
         DWORD creation_disposition = static_cast<DWORD>(static_cast<std::underlying_type_t<file_mode>>(mode));
         DWORD flags = static_cast<DWORD>(static_cast<std::underlying_type_t<file_options>>(options));
         flags |= SECURITY_SQOS_PRESENT | SECURITY_ANONYMOUS;
-        context_->file = CreateFile(path.c_str(), desired_access, share_mode, nullptr, creation_disposition, flags, nullptr);
+
+        auto size = MultiByteToWideChar(CP_UTF8, 0, path.c_str(), -1, nullptr, 0);
+        auto wstr = std::make_unique<wchar_t[]>(size);
+        auto rc = MultiByteToWideChar(CP_UTF8, 0, path.c_str(), static_cast<int>(path.size()), wstr.get(), size);
+
+        if (rc == 0)
+        {
+            throw std::system_error(GetLastError(), std::system_category(), "MultiByteToWideChar");
+        }
+
+        context_->file = CreateFile(wstr.get(), desired_access, share_mode, nullptr, creation_disposition, flags, nullptr);
 
         if (context_->file == INVALID_HANDLE_VALUE)
         {
@@ -271,7 +282,7 @@ namespace exa
         }
     }
 
-    std::string file_stream::name() const
+    const std::string& file_stream::name() const
     {
         validate_handle(context_->file);
         return context_->name;

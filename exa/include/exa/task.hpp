@@ -25,7 +25,7 @@ namespace exa
                 instance.task_queue_.push_back([f, p] {
                     try
                     {
-                        f();
+                        std::invoke(f);
                         p->set_value();
                     }
                     catch (...)
@@ -48,7 +48,7 @@ namespace exa
                 instance.task_queue_.push_back([f, p] {
                     try
                     {
-                        auto&& r = f();
+                        auto&& r = std::invoke(f);
                         p->set_value(r);
                     }
                     catch (...)

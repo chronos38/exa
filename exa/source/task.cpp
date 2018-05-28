@@ -107,7 +107,7 @@ namespace exa
 
             if (f)
             {
-                f();
+                std::invoke(f);
             }
         }
 

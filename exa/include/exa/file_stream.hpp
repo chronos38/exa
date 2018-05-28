@@ -80,7 +80,7 @@ namespace exa
         virtual void write(gsl::span<const uint8_t> buffer) override;
 
         // Specific to file_stream
-        std::string name() const;
+        const std::string& name() const;
 
     private:
         struct file_stream_context;

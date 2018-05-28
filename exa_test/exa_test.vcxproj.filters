@@ -9,6 +9,7 @@
     <ClCompile Include="test\task_test.cpp" />
     <ClCompile Include="test\network_stream_test.cpp" />
     <ClCompile Include="test\buffered_stream_test.cpp" />
+    <ClCompile Include="test\file_stream_test.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\pch.h" />

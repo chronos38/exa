@@ -44,6 +44,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="test\buffered_stream_test.cpp" />
+    <ClCompile Include="test\file_stream_test.cpp" />
     <ClCompile Include="test\network_stream_test.cpp" />
     <ClCompile Include="test\task_test.cpp" />
     <ClCompile Include="test\tcp_client_test.cpp" />
