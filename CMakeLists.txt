@@ -54,6 +54,8 @@ if(EXA_BUILD_TESTS)
     "${CMAKE_CURRENT_SOURCE_DIR}/exa_test/source/main.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/exa_test/source/pch.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/exa_test/include/pch.h"
+    ${SRCROOT}/buffered_stream_test.cpp
+    ${SRCROOT}/file_stream_test.cpp
     ${SRCROOT}/network_stream_test.cpp
     ${SRCROOT}/task_test.cpp
     ${SRCROOT}/tcp_client_test.cpp
