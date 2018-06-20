@@ -56,10 +56,10 @@ namespace exa
                     flags |= O_RDONLY;
                     break;
                 case file_access::write:
-                    flags |= O_RDWR;
+                    flags |= O_WRONLY;
                     break;
                 case file_access::read_write:
-                    flags |= O_WRONLY;
+                    flags |= O_RDWR;
                     break;
                 default:
                     break;
@@ -201,11 +201,6 @@ namespace exa
 
     std::streamoff file_stream::position() const
     {
-        if (value < 0)
-        {
-            throw std::out_of_range("Can't set a negative stream position.");
-        }
-
         validate_descriptor(context_->file);
         auto pos = lseek(context_->file, 0, SEEK_CUR);
         return static_cast<std::streamoff>(pos);
@@ -213,6 +208,11 @@ namespace exa
 
     void file_stream::position(std::streamoff value)
     {
+        if (value < 0)
+        {
+            throw std::out_of_range("Can't set a negative stream position.");
+        }
+
         validate_descriptor(context_->file);
 
         if (lseek(context_->file, static_cast<off_t>(value), SEEK_SET) == -1)

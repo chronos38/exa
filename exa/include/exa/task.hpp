@@ -17,7 +17,7 @@ namespace exa
     {
     public:
         template <class Function, class = std::enable_if_t<std::is_void_v<std::invoke_result_t<Function>>>>
-        static constexpr std::future<void> run(Function&& f)
+        static std::future<void> run(Function&& f)
         {
             static_assert(std::is_invocable_v<Function>);
             auto p = std::make_shared<std::promise<void>>();
@@ -39,7 +39,7 @@ namespace exa
         }
 
         template <class Function, class = std::enable_if_t<!std::is_void_v<std::invoke_result_t<Function>>>>
-        static constexpr std::future<std::invoke_result_t<Function>> run(Function&& f)
+        static std::future<std::invoke_result_t<Function>> run(Function&& f)
         {
             static_assert(std::is_invocable_v<Function>);
             using return_type = std::invoke_result_t<Function>;

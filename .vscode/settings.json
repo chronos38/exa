@@ -6,6 +6,11 @@
         "system_error": "cpp",
         "type_traits": "cpp",
         "multi_span": "cpp",
-        "*.ipp": "cpp"
+        "*.ipp": "cpp",
+        "array": "cpp",
+        "initializer_list": "cpp",
+        "valarray": "cpp",
+        "string_view": "cpp",
+        "span": "cpp"
     }
 }

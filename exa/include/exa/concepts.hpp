@@ -84,7 +84,7 @@ namespace exa
 
     struct scope
     {
-        template <class Callable, class = std::enable_if<std::is_invocable_v<Callable, T>>>
+        template <class Callable, class = std::enable_if<std::is_invocable_v<Callable>>>
         constexpr scope(Callable&& f)
         {
             std::invoke(f);
