@@ -1,3 +1,4 @@
+set(gtest_force_shared_crt TRUE)
 add_subdirectory(googletest)
 
 include_directories(
@@ -21,10 +22,18 @@ set(
     ${SRCROOT}/udp_client_test.cpp
 )
 
+if(WIN32)
+	add_definitions(
+		-D_UNICODE
+		-DUNICODE
+	)
+endif()
+
+find_package(Threads)
 add_executable(${PROJECT_NAME}_test ${SOURCES})
 target_link_libraries(
     ${PROJECT_NAME}_test
     ${PROJECT_NAME}
     gtest
-    pthread
+    Threads::Threads
 )

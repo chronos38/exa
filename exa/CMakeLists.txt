@@ -35,4 +35,11 @@ set(
     ${SRCROOT}/udp_client.cpp
 )
 
+if(WIN32)
+	add_definitions(
+		-D_UNICODE
+		-DUNICODE
+	)
+endif()
+
 add_library(${PROJECT_NAME} STATIC ${SOURCES})
