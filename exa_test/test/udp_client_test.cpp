@@ -2,6 +2,7 @@
 #include <exa/udp_client.hpp>
 
 using namespace exa;
+using namespace testing;
 using namespace std::literals::chrono_literals;
 
 namespace
@@ -31,7 +32,7 @@ TEST(udp_client_test, DISABLED_ctor_invalid_host_name_throws)
 TEST(udp_client_test, ctor_can_send)
 {
     udp_client c;
-    ASSERT_EQ(1, c.send(std::vector<uint8_t>({1}), endpoint(address::loopback, unused_port)));
+    ASSERT_THAT(c.send(std::vector<uint8_t>({1}), endpoint(address::loopback, unused_port)), Eq(1));
     ASSERT_FALSE(c.connected());
 }
 
@@ -40,14 +41,14 @@ TEST(udp_client_test, ctor_int_can_send)
     try
     {
         udp_client c(unused_port);
-        ASSERT_EQ(1, c.send(std::vector<uint8_t>({1}), endpoint(address::loopback, unused_port)));
+        ASSERT_THAT(c.send(std::vector<uint8_t>({1}), endpoint(address::loopback, unused_port)), Eq(1));
     }
     catch (std::system_error& e)
     {
 #ifdef _WIN32
-        ASSERT_EQ(WSAEACCES, e.code().value());
+        ASSERT_THAT(e.code().value(), Eq(WSAEACCES));
 #else
-        ASSERT_EQ(EACCES, e.code().value());
+        ASSERT_THAT(e.code().value(), Eq(EACCES));
 #endif
     }
 }
@@ -57,14 +58,14 @@ TEST(udp_client_test, ctor_int_address_family_ipv4_can_send)
     try
     {
         udp_client c(unused_port, address_family::inter_network);
-        ASSERT_EQ(1, c.send(std::vector<uint8_t>({1}), endpoint(address::loopback, unused_port)));
+        ASSERT_THAT(c.send(std::vector<uint8_t>({1}), endpoint(address::loopback, unused_port)), Eq(1));
     }
     catch (std::system_error& e)
     {
 #ifdef _WIN32
-        ASSERT_EQ(WSAEACCES, e.code().value());
+        ASSERT_THAT(e.code().value(), Eq(WSAEACCES));
 #else
-        ASSERT_EQ(EACCES, e.code().value());
+        ASSERT_THAT(e.code().value(), Eq(EACCES));
 #endif
     }
 }
@@ -74,14 +75,14 @@ TEST(udp_client_test, ctor_int_address_family_ipv6_can_send)
     try
     {
         udp_client c(unused_port, address_family::inter_network_v6);
-        ASSERT_EQ(1, c.send(std::vector<uint8_t>({1}), endpoint(address::ipv6_loopback, unused_port)));
+        ASSERT_THAT(c.send(std::vector<uint8_t>({1}), endpoint(address::ipv6_loopback, unused_port)), Eq(1));
     }
     catch (std::system_error& e)
     {
 #ifdef _WIN32
-        ASSERT_EQ(WSAEACCES, e.code().value());
+        ASSERT_THAT(e.code().value(), Eq(WSAEACCES));
 #else
-        ASSERT_EQ(EACCES, e.code().value());
+        ASSERT_THAT(e.code().value(), Eq(EACCES));
 #endif
     }
 }
@@ -96,9 +97,9 @@ TEST(udp_client_test, ctor_endpoint_can_send)
     catch (std::system_error& e)
     {
 #ifdef _WIN32
-        ASSERT_EQ(WSAEACCES, e.code().value());
+        ASSERT_THAT(e.code().value(), Eq(WSAEACCES));
 #else
-        ASSERT_EQ(EACCES, e.code().value());
+        ASSERT_THAT(e.code().value(), Eq(EACCES));
 #endif
     }
 }
@@ -113,9 +114,9 @@ TEST(udp_client_test, ctor_string_int_can_send)
     catch (std::system_error& e)
     {
 #ifdef _WIN32
-        ASSERT_EQ(WSAEACCES, e.code().value());
+        ASSERT_THAT(e.code().value(), Eq(WSAEACCES));
 #else
-        ASSERT_EQ(EACCES, e.code().value());
+        ASSERT_THAT(e.code().value(), Eq(EACCES));
 #endif
     }
 }
@@ -140,10 +141,10 @@ TEST(udp_client_test, ttl_roundtrips)
 {
     udp_client c;
     auto ttl = c.ttl();
-    ASSERT_EQ(ttl, c.ttl());
+    ASSERT_THAT(c.ttl(), Eq(ttl));
 
     c.ttl(100s);
-    ASSERT_EQ(100s, c.ttl());
+    ASSERT_THAT(c.ttl(), Eq(100s));
 }
 
 TEST(udp_client_test, enable_broadcast_roundtrips)
@@ -215,8 +216,8 @@ TEST(udp_client_test, send_receive_success)
         endpoint ep;
         auto data = receiver.receive(ep);
 
-        ASSERT_EQ(sender.socket()->local_endpoint().port(), ep.port());
-        ASSERT_NE(0, data.size());
+        ASSERT_THAT(ep.port(), Eq(sender.socket()->local_endpoint().port()));
+        ASSERT_THAT(data.size(), Ne(0));
     }
 }
 
@@ -233,8 +234,8 @@ TEST(udp_client_test, send_receive_connected_success)
     endpoint ep;
     auto data = receiver.receive(ep);
 
-    ASSERT_EQ(sender.socket()->local_endpoint().port(), ep.port());
-    ASSERT_NE(0, data.size());
+    ASSERT_THAT(ep.port(), Eq(sender.socket()->local_endpoint().port()));
+    ASSERT_THAT(data.size(), Ne(0));
 }
 
 TEST(udp_client_test, send_available_success)
@@ -262,7 +263,7 @@ TEST(udp_client_test, send_available_success)
             }
         }
 
-        ASSERT_NE(0, n);
+        ASSERT_THAT(n, Ne(0));
     }
 }
 
@@ -281,8 +282,8 @@ TEST(udp_client_test, send_async_receive_async_success)
         }
 
         auto result = receiver.receive_async().get();
-        ASSERT_EQ(sender.socket()->local_endpoint().port(), result.endpoint.port());
-        ASSERT_NE(0, result.buffer.size());
+        ASSERT_THAT(result.endpoint.port(), Eq(sender.socket()->local_endpoint().port()));
+        ASSERT_THAT(result.buffer.size(), Ne(0));
     }
 }
 
@@ -297,6 +298,6 @@ TEST(udp_client_test, send_async_receive_async_connected_success)
     }
 
     auto result = receiver.receive_async().get();
-    ASSERT_EQ(sender.socket()->local_endpoint().port(), result.endpoint.port());
-    ASSERT_NE(0, result.buffer.size());
+    ASSERT_THAT(result.endpoint.port(), Eq(sender.socket()->local_endpoint().port()));
+    ASSERT_THAT(result.buffer.size(), Ne(0));
 }
