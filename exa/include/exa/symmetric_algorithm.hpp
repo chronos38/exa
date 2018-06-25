@@ -38,17 +38,19 @@ namespace exa
         virtual const std::vector<uint8_t>& iv() const noexcept = 0;
         virtual void iv(gsl::span<const uint8_t> v) noexcept = 0;
 
-        virtual std::unique_ptr<crypto_transform> make_decryptor() const = 0;
-        virtual std::unique_ptr<crypto_transform> make_decryptor(cipher_mode mode) const = 0;
-        virtual std::unique_ptr<crypto_transform> make_decryptor(cipher_mode mode, gsl::span<const uint8_t> key) const = 0;
-        virtual std::unique_ptr<crypto_transform> make_decryptor(cipher_mode mode, gsl::span<const uint8_t> key,
-                                                                 gsl::span<const uint8_t> iv) const = 0;
+        virtual std::shared_ptr<crypto_transform> make_shared_decryptor() const = 0;
+        virtual std::shared_ptr<crypto_transform> make_shared_decryptor(cipher_mode mode, gsl::span<const uint8_t> key,
+                                                                        gsl::span<const uint8_t> iv) const = 0;
+        virtual std::shared_ptr<crypto_transform> make_shared_encryptor() const = 0;
+        virtual std::shared_ptr<crypto_transform> make_shared_encryptor(cipher_mode mode, gsl::span<const uint8_t> key,
+                                                                        gsl::span<const uint8_t> iv) const = 0;
 
-        virtual std::unique_ptr<crypto_transform> make_encryptor() const = 0;
-        virtual std::unique_ptr<crypto_transform> make_encryptor(cipher_mode mode) const = 0;
-        virtual std::unique_ptr<crypto_transform> make_encryptor(cipher_mode mode, gsl::span<const uint8_t> key) const = 0;
-        virtual std::unique_ptr<crypto_transform> make_encryptor(cipher_mode mode, gsl::span<const uint8_t> key,
-                                                                 gsl::span<const uint8_t> iv) const = 0;
+        virtual std::unique_ptr<crypto_transform> make_unique_decryptor() const = 0;
+        virtual std::unique_ptr<crypto_transform> make_unique_decryptor(cipher_mode mode, gsl::span<const uint8_t> key,
+                                                                        gsl::span<const uint8_t> iv) const = 0;
+        virtual std::unique_ptr<crypto_transform> make_unique_encryptor() const = 0;
+        virtual std::unique_ptr<crypto_transform> make_unique_encryptor(cipher_mode mode, gsl::span<const uint8_t> key,
+                                                                        gsl::span<const uint8_t> iv) const = 0;
     };
 
     enum class symmetric_algorithm_type
@@ -65,5 +67,6 @@ namespace exa
         seed
     };
 
-    std::unique_ptr<symmetric_algorithm> make_symmetric_algorithm(symmetric_algorithm_type type);
+    std::unique_ptr<symmetric_algorithm> make_unique_symmetric_algorithm(symmetric_algorithm_type type);
+    std::shared_ptr<symmetric_algorithm> make_shared_symmetric_algorithm(symmetric_algorithm_type type);
 }

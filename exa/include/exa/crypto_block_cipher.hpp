@@ -64,10 +64,10 @@ namespace exa
     };
 
     template <typename T>
-    class crypto_block_cypher : public symmetric_algorithm
+    class crypto_block_cipher : public symmetric_algorithm
     {
     public:
-        virtual ~crypto_block_cypher() = default;
+        virtual ~crypto_block_cipher() = default;
 
         virtual size_t block_size() const noexcept override
         {
@@ -129,7 +129,7 @@ namespace exa
             iv_.assign(std::begin(iv), std::end(iv));
         }
 
-        virtual std::unique_ptr<crypto_transform> make_decryptor() const override
+        virtual std::shared_ptr<crypto_transform> make_shared_decryptor() const override
         {
             switch (mode_)
             {
@@ -148,47 +148,8 @@ namespace exa
             throw std::invalid_argument("Received invalid cipher mode.");
         }
 
-        virtual std::unique_ptr<crypto_transform> make_decryptor(cipher_mode mode) const override
-        {
-            switch (mode)
-            {
-                case cipher_mode::cbc:
-                    return std::make_unique<crypto_transform_algorithm<CryptoPP::CBC_Mode<T>::Decryption>>(key_, iv_);
-                case cipher_mode::cfb:
-                    return std::make_unique<crypto_transform_algorithm<CryptoPP::CFB_Mode<T>::Decryption>>(key_, iv_);
-                case cipher_mode::ctr:
-                    return std::make_unique<crypto_transform_algorithm<CryptoPP::CTR_Mode<T>::Decryption>>(key_, iv_);
-                case cipher_mode::ecb:
-                    return std::make_unique<crypto_transform_algorithm<CryptoPP::ECB_Mode<T>::Decryption>>(key_, iv_);
-                case cipher_mode::ofb:
-                    return std::make_unique<crypto_transform_algorithm<CryptoPP::OFB_Mode<T>::Decryption>>(key_, iv_);
-            }
-
-            throw std::invalid_argument("Received invalid cipher mode.");
-        }
-
-        virtual std::unique_ptr<crypto_transform> make_decryptor(cipher_mode mode,
-                                                                 gsl::span<const uint8_t> key) const override
-        {
-            switch (mode)
-            {
-                case cipher_mode::cbc:
-                    return std::make_unique<crypto_transform_algorithm<CryptoPP::CBC_Mode<T>::Decryption>>(key, iv_);
-                case cipher_mode::cfb:
-                    return std::make_unique<crypto_transform_algorithm<CryptoPP::CFB_Mode<T>::Decryption>>(key, iv_);
-                case cipher_mode::ctr:
-                    return std::make_unique<crypto_transform_algorithm<CryptoPP::CTR_Mode<T>::Decryption>>(key, iv_);
-                case cipher_mode::ecb:
-                    return std::make_unique<crypto_transform_algorithm<CryptoPP::ECB_Mode<T>::Decryption>>(key, iv_);
-                case cipher_mode::ofb:
-                    return std::make_unique<crypto_transform_algorithm<CryptoPP::OFB_Mode<T>::Decryption>>(key, iv_);
-            }
-
-            throw std::invalid_argument("Received invalid cipher mode.");
-        }
-
-        virtual std::unique_ptr<crypto_transform> make_decryptor(cipher_mode mode, gsl::span<const uint8_t> key,
-                                                                 gsl::span<const uint8_t> iv) const override
+        virtual std::shared_ptr<crypto_transform> make_shared_decryptor(cipher_mode mode, gsl::span<const uint8_t> key,
+                                                                        gsl::span<const uint8_t> iv) const override
         {
             switch (mode)
             {
@@ -207,7 +168,7 @@ namespace exa
             throw std::invalid_argument("Received invalid cipher mode.");
         }
 
-        virtual std::unique_ptr<crypto_transform> make_encryptor() const override
+        virtual std::shared_ptr<crypto_transform> make_shared_encryptor() const override
         {
             switch (mode_)
             {
@@ -226,9 +187,68 @@ namespace exa
             throw std::invalid_argument("Received invalid cipher mode.");
         }
 
-        virtual std::unique_ptr<crypto_transform> make_encryptor(cipher_mode mode) const override
+        virtual std::shared_ptr<crypto_transform> make_shared_encryptor(cipher_mode mode, gsl::span<const uint8_t> key,
+                                                                        gsl::span<const uint8_t> iv) const override
         {
             switch (mode)
+            {
+                case cipher_mode::cbc:
+                    return std::make_unique<crypto_transform_algorithm<CryptoPP::CBC_Mode<T>::Encryption>>(key, iv);
+                case cipher_mode::cfb:
+                    return std::make_unique<crypto_transform_algorithm<CryptoPP::CFB_Mode<T>::Encryption>>(key, iv);
+                case cipher_mode::ctr:
+                    return std::make_unique<crypto_transform_algorithm<CryptoPP::CTR_Mode<T>::Encryption>>(key, iv);
+                case cipher_mode::ecb:
+                    return std::make_unique<crypto_transform_algorithm<CryptoPP::ECB_Mode<T>::Encryption>>(key, iv);
+                case cipher_mode::ofb:
+                    return std::make_unique<crypto_transform_algorithm<CryptoPP::OFB_Mode<T>::Encryption>>(key, iv);
+            }
+
+            throw std::invalid_argument("Received invalid cipher mode.");
+        }
+
+        virtual std::unique_ptr<crypto_transform> make_unique_decryptor() const override
+        {
+            switch (mode_)
+            {
+                case cipher_mode::cbc:
+                    return std::make_unique<crypto_transform_algorithm<CryptoPP::CBC_Mode<T>::Decryption>>(key_, iv_);
+                case cipher_mode::cfb:
+                    return std::make_unique<crypto_transform_algorithm<CryptoPP::CFB_Mode<T>::Decryption>>(key_, iv_);
+                case cipher_mode::ctr:
+                    return std::make_unique<crypto_transform_algorithm<CryptoPP::CTR_Mode<T>::Decryption>>(key_, iv_);
+                case cipher_mode::ecb:
+                    return std::make_unique<crypto_transform_algorithm<CryptoPP::ECB_Mode<T>::Decryption>>(key_, iv_);
+                case cipher_mode::ofb:
+                    return std::make_unique<crypto_transform_algorithm<CryptoPP::OFB_Mode<T>::Decryption>>(key_, iv_);
+            }
+
+            throw std::invalid_argument("Received invalid cipher mode.");
+        }
+
+        virtual std::unique_ptr<crypto_transform> make_unique_decryptor(cipher_mode mode, gsl::span<const uint8_t> key,
+                                                                        gsl::span<const uint8_t> iv) const override
+        {
+            switch (mode)
+            {
+                case cipher_mode::cbc:
+                    return std::make_unique<crypto_transform_algorithm<CryptoPP::CBC_Mode<T>::Decryption>>(key, iv);
+                case cipher_mode::cfb:
+                    return std::make_unique<crypto_transform_algorithm<CryptoPP::CFB_Mode<T>::Decryption>>(key, iv);
+                case cipher_mode::ctr:
+                    return std::make_unique<crypto_transform_algorithm<CryptoPP::CTR_Mode<T>::Decryption>>(key, iv);
+                case cipher_mode::ecb:
+                    return std::make_unique<crypto_transform_algorithm<CryptoPP::ECB_Mode<T>::Decryption>>(key, iv);
+                case cipher_mode::ofb:
+                    return std::make_unique<crypto_transform_algorithm<CryptoPP::OFB_Mode<T>::Decryption>>(key, iv);
+            }
+
+            throw std::invalid_argument("Received invalid cipher mode.");
+        }
+
+        virtual std::unique_ptr<crypto_transform> make_unique_encryptor() const override
+        {
+            switch (mode_)
             {
                 case cipher_mode::cbc:
                     return std::make_unique<crypto_transform_algorithm<CryptoPP::CBC_Mode<T>::Encryption>>(key_, iv_);
@@ -245,28 +265,8 @@ namespace exa
             throw std::invalid_argument("Received invalid cipher mode.");
         }
 
-        virtual std::unique_ptr<crypto_transform> make_encryptor(cipher_mode mode,
-                                                                 gsl::span<const uint8_t> key) const override
-        {
-            switch (mode)
-            {
-                case cipher_mode::cbc:
-                    return std::make_unique<crypto_transform_algorithm<CryptoPP::CBC_Mode<T>::Encryption>>(key, iv_);
-                case cipher_mode::cfb:
-                    return std::make_unique<crypto_transform_algorithm<CryptoPP::CFB_Mode<T>::Encryption>>(key, iv_);
-                case cipher_mode::ctr:
-                    return std::make_unique<crypto_transform_algorithm<CryptoPP::CTR_Mode<T>::Encryption>>(key, iv_);
-                case cipher_mode::ecb:
-                    return std::make_unique<crypto_transform_algorithm<CryptoPP::ECB_Mode<T>::Encryption>>(key, iv_);
-                case cipher_mode::ofb:
-                    return std::make_unique<crypto_transform_algorithm<CryptoPP::OFB_Mode<T>::Encryption>>(key, iv_);
-            }
-
-            throw std::invalid_argument("Received invalid cipher mode.");
-        }
-
-        virtual std::unique_ptr<crypto_transform> make_encryptor(cipher_mode mode, gsl::span<const uint8_t> key,
-                                                                 gsl::span<const uint8_t> iv) const override
+        virtual std::unique_ptr<crypto_transform> make_unique_encryptor(cipher_mode mode, gsl::span<const uint8_t> key,
+                                                                        gsl::span<const uint8_t> iv) const override
         {
             switch (mode)
             {
