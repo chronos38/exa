@@ -142,10 +142,10 @@ TEST(tcp_client_test, roundtrip_receive_buffer_size_get_equals_set)
     tcp_client c;
 
     c.receive_buffer(4096);
-    ASSERT_THAT(c.receive_buffer(), Ge(4096));
+    ASSERT_THAT(c.receive_buffer(), Ge(4096u));
 
     c.receive_buffer(8192);
-    ASSERT_THAT(c.receive_buffer(), Ge(8192));
+    ASSERT_THAT(c.receive_buffer(), Ge(8192u));
 }
 
 TEST(tcp_client_test, roundtrip_send_buffer_size_get_equals_set)
@@ -153,10 +153,10 @@ TEST(tcp_client_test, roundtrip_send_buffer_size_get_equals_set)
     tcp_client c;
 
     c.send_buffer(4096);
-    ASSERT_THAT(c.send_buffer(), Ge(4096));
+    ASSERT_THAT(c.send_buffer(), Ge(4096u));
 
     c.send_buffer(8192);
-    ASSERT_THAT(c.send_buffer(), Ge(8192));
+    ASSERT_THAT(c.send_buffer(), Ge(8192u));
 }
 
 TEST(tcp_client_test, roundtrip_receive_timeout_get_equals_set)

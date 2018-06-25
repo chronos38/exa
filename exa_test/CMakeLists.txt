@@ -23,6 +23,7 @@ if(WIN32)
     add_definitions(
         -D_UNICODE
         -DUNICODE
+        -D_CRT_SECURE_NO_WARNINGS
     )
 endif()
 
