@@ -12,6 +12,8 @@ set(
     ${INCROOT}/buffered_stream.hpp
     ${SRCROOT}/buffered_stream.cpp
     ${INCROOT}/concepts.hpp
+    ${INCROOT}/crypto_block_cipher.hpp
+    ${INCROOT}/crypto_transform.hpp
     ${INCROOT}/dependencies.hpp
     ${INCROOT}/endpoint.hpp
     ${SRCROOT}/endpoint.cpp
@@ -28,6 +30,8 @@ set(
     ${SRCROOT}/socket.cpp
     ${INCROOT}/stream.hpp
     ${SRCROOT}/stream.cpp
+    ${INCROOT}/symmetric_algorithm.hpp
+    ${SRCROOT}/symmetric_algorithm.cpp
     ${INCROOT}/task.hpp
     ${SRCROOT}/task.cpp
     ${INCROOT}/tcp_client.hpp
