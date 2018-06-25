@@ -3,6 +3,7 @@
 #include <exa/tcp_client.hpp>
 
 using namespace exa;
+using namespace testing;
 using namespace std::literals::chrono_literals;
 
 TEST(tcp_listener_test, active_true_while_running)
@@ -18,10 +19,10 @@ TEST(tcp_listener_test, active_true_while_running)
         ASSERT_TRUE(l->active());
         ASSERT_THROW(l->exclusive_address_use(true), std::runtime_error);
         ASSERT_THROW(l->exclusive_address_use(false), std::runtime_error);
-        ASSERT_EQ(l->exclusive_address_use(), l->exclusive_address_use());
+        ASSERT_THAT(l->exclusive_address_use(), Eq(l->exclusive_address_use()));
         ASSERT_THROW(l->reuse_address(true), std::runtime_error);
         ASSERT_THROW(l->reuse_address(false), std::runtime_error);
-        ASSERT_EQ(l->reuse_address(), l->reuse_address());
+        ASSERT_THAT(l->reuse_address(), Eq(l->reuse_address()));
         l->stop();
         ASSERT_FALSE(l->active());
     }
