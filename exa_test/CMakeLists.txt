@@ -1,10 +1,7 @@
-set(gtest_force_shared_crt TRUE)
-add_subdirectory(googletest)
-
 include_directories(
     "${CMAKE_CURRENT_SOURCE_DIR}/include"
     "${CMAKE_CURRENT_SOURCE_DIR}/../exa/include"
-    SYSTEM "${CMAKE_CURRENT_SOURCE_DIR}/googletest/include"
+    SYSTEM "${CMAKE_CURRENT_SOURCE_DIR}/../third_party/include"
 )
 set(SRCROOT "${CMAKE_CURRENT_SOURCE_DIR}/test")
 
@@ -23,10 +20,10 @@ set(
 )
 
 if(WIN32)
-	add_definitions(
-		-D_UNICODE
-		-DUNICODE
-	)
+    add_definitions(
+        -D_UNICODE
+        -DUNICODE
+    )
 endif()
 
 find_package(Threads)
@@ -35,5 +32,7 @@ target_link_libraries(
     ${PROJECT_NAME}_test
     ${PROJECT_NAME}
     gtest
+    gmock
+    cryptopp
     Threads::Threads
 )

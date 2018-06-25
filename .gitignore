@@ -1,5 +1,6 @@
 # custom
 build/
+third_party/include/
 
 # cmake
 CMakeCache.txt

@@ -1,4 +1,7 @@
-include_directories("${CMAKE_CURRENT_SOURCE_DIR}/include")
+include_directories(
+    "${CMAKE_CURRENT_SOURCE_DIR}/include"
+    SYSTEM "${CMAKE_CURRENT_SOURCE_DIR}/../third_party/include"
+)
 set(INCROOT "${CMAKE_CURRENT_SOURCE_DIR}/include/exa")
 set(SRCROOT "${CMAKE_CURRENT_SOURCE_DIR}/source")
 
@@ -36,10 +39,10 @@ set(
 )
 
 if(WIN32)
-	add_definitions(
-		-D_UNICODE
-		-DUNICODE
-	)
+    add_definitions(
+        -D_UNICODE
+        -DUNICODE
+    )
 endif()
 
 add_library(${PROJECT_NAME} STATIC ${SOURCES})
