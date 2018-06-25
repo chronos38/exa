@@ -4,7 +4,8 @@
 #include <exa/task.hpp>
 
 using namespace exa;
-using namespace std::literals::chrono_literals;
+using namespace testing;
+using namespace std::chrono_literals;
 
 TEST(network_stream_test, ctor_null_socket_throws)
 {
@@ -62,12 +63,12 @@ TEST(network_stream_test, ctor_socket_can_read_and_write_doesnt_own)
         std::vector<uint8_t> buffer(1);
 
         server_stream->write_async(std::vector<uint8_t>({'a'})).get();
-        ASSERT_EQ(1, client_stream->read_async(buffer).get());
-        ASSERT_EQ('a', static_cast<char>(buffer[0]));
+        ASSERT_THAT(client_stream->read_async(buffer).get(), Eq(1));
+        ASSERT_THAT(static_cast<char>(buffer[0]), Eq('a'));
 
         client_stream->write_async(std::vector<uint8_t>({'b'})).get();
-        ASSERT_EQ(1, server_stream->read_async(buffer).get());
-        ASSERT_EQ('b', static_cast<char>(buffer[0]));
+        ASSERT_THAT(server_stream->read_async(buffer).get(), Eq(1));
+        ASSERT_THAT(static_cast<char>(buffer[0]), Eq('b'));
     }
 }
 
@@ -96,12 +97,12 @@ TEST(network_stream_test, ctor_socket_file_access_bool_can_read_and_write_doesnt
         std::vector<uint8_t> buffer(1);
 
         server_stream->write_async(std::vector<uint8_t>({'a'})).get();
-        ASSERT_EQ(1, client_stream->read_async(buffer).get());
-        ASSERT_EQ('a', static_cast<char>(buffer[0]));
+        ASSERT_THAT(client_stream->read_async(buffer).get(), Eq(1));
+        ASSERT_THAT(static_cast<char>(buffer[0]), Eq('a'));
 
         client_stream->write_async(std::vector<uint8_t>({'b'})).get();
-        ASSERT_EQ(1, server_stream->read_async(buffer).get());
-        ASSERT_EQ('b', static_cast<char>(buffer[0]));
+        ASSERT_THAT(server_stream->read_async(buffer).get(), Eq(1));
+        ASSERT_THAT(static_cast<char>(buffer[0]), Eq('b'));
     }
 }
 
@@ -135,16 +136,16 @@ TEST(network_stream_test, ctor_socket_bool_can_read_and_write)
                 std::vector<uint8_t> buffer(1);
 
                 server_stream->write_async(std::vector<uint8_t>({'a'})).get();
-                ASSERT_EQ(1, client_stream->read_async(buffer).get());
-                ASSERT_EQ('a', static_cast<char>(buffer[0]));
+                ASSERT_THAT(client_stream->read_async(buffer).get(), Eq(1));
+                ASSERT_THAT(static_cast<char>(buffer[0]), Eq('a'));
 
                 client_stream->write_async(std::vector<uint8_t>({'b'})).get();
-                ASSERT_EQ(1, server_stream->read_async(buffer).get());
-                ASSERT_EQ('b', static_cast<char>(buffer[0]));
+                ASSERT_THAT(server_stream->read_async(buffer).get(), Eq(1));
+                ASSERT_THAT(static_cast<char>(buffer[0]), Eq('b'));
             }
             catch (std::runtime_error&)
             {
-                ASSERT_NE(0, i);
+                ASSERT_THAT(i, Ne(0));
                 ASSERT_TRUE(owns_socket);
             }
         }
@@ -176,8 +177,8 @@ TEST(network_stream_test, ctor_socket_file_access_can_read_and_write)
         std::vector<uint8_t> buffer(1);
 
         server_stream->write_async(std::vector<uint8_t>({'a'})).get();
-        ASSERT_EQ(1, client_stream->read_async(buffer).get());
-        ASSERT_EQ('a', static_cast<char>(buffer[0]));
+        ASSERT_THAT(client_stream->read_async(buffer).get(), Eq(1));
+        ASSERT_THAT(static_cast<char>(buffer[0]), Eq('a'));
 
         ASSERT_THROW(server_stream->read_async(buffer).get(), std::runtime_error);
         ASSERT_THROW(client_stream->write_async(std::vector<uint8_t>({'b'})).get(), std::runtime_error);
@@ -298,7 +299,7 @@ TEST(network_stream_test, readable_writeable_properties_roundtrip)
     ASSERT_TRUE(stream->readable());
     ASSERT_TRUE(stream->can_read());
     auto f2 = client->send_async(buffer);
-    ASSERT_EQ(1, stream->read_async(buffer).get());
+    ASSERT_THAT(stream->read_async(buffer).get(), Eq(1));
     f2.get();
 
     stream->writable(false);
@@ -310,7 +311,7 @@ TEST(network_stream_test, readable_writeable_properties_roundtrip)
     ASSERT_TRUE(stream->writable());
     ASSERT_TRUE(stream->can_write());
     auto f3 = stream->write_async(buffer);
-    ASSERT_EQ(1, client->receive_async(buffer).get());
+    ASSERT_THAT(client->receive_async(buffer).get(), Eq(1));
     f3.get();
 }
 
@@ -333,7 +334,7 @@ TEST(network_stream_test, read_write_byte_success)
     {
         auto read = task::run([=] { return client_stream->read_byte(); });
         task::run([=] { server_stream->write_byte(i); }).get();
-        ASSERT_EQ(i, read.get());
+        ASSERT_THAT(read.get(), Eq(i));
     }
 }
 
@@ -358,10 +359,7 @@ TEST(network_stream_test, read_write_array_success)
     std::vector<uint8_t> server_data(42, 0);
     server_stream->read(server_data);
 
-    for (size_t i = 0; i < 42; ++i)
-    {
-        ASSERT_EQ(client_data[i], server_data[i]);
-    }
+    ASSERT_THAT(client_data, ContainerEq(server_data));
 }
 
 TEST(network_stream_test, read_timeout_expires_throws)
@@ -398,29 +396,29 @@ TEST(network_stream_test, timeout_valid_data_roundtrip)
     auto server_stream = std::make_shared<network_stream>(server);
 
     server_stream->read_timeout(100ms);
-    ASSERT_EQ(100ms, server_stream->read_timeout());
-    server_stream->read_timeout(100ms);
-    ASSERT_EQ(100ms, server_stream->read_timeout());
+    ASSERT_THAT(server_stream->read_timeout(), Eq(100ms));
+    server_stream->read_timeout(1ms);
+    ASSERT_THAT(server_stream->read_timeout(), Eq(1ms));
 
 #ifdef _WIN32
     server_stream->read_timeout(-1ms);
-    ASSERT_EQ(-1ms, server_stream->read_timeout());
+    ASSERT_THAT(server_stream->read_timeout(), Eq(-1ms));
 #else
     server_stream->read_timeout(0ms);
-    ASSERT_EQ(0ms, server_stream->read_timeout());
+    ASSERT_THAT(server_stream->read_timeout(), Eq(0ms));
 #endif
 
     server_stream->write_timeout(100ms);
-    ASSERT_EQ(100ms, server_stream->write_timeout());
-    server_stream->write_timeout(100ms);
-    ASSERT_EQ(100ms, server_stream->write_timeout());
+    ASSERT_THAT(server_stream->write_timeout(), Eq(100ms));
+    server_stream->write_timeout(1ms);
+    ASSERT_THAT(server_stream->write_timeout(), Eq(1ms));
 
 #ifdef _WIN32
     server_stream->write_timeout(-1ms);
-    ASSERT_EQ(-1ms, server_stream->write_timeout());
+    ASSERT_THAT(server_stream->write_timeout(), Eq(-1ms));
 #else
     server_stream->write_timeout(0ms);
-    ASSERT_EQ(0ms, server_stream->write_timeout());
+    ASSERT_THAT(server_stream->write_timeout(), Eq(0ms));
 #endif
 }
 
@@ -460,12 +458,7 @@ TEST(network_stream_test, copy_to_async_all_data_copied)
         copy.wait();
 
         auto result = results->to_array();
-        ASSERT_EQ(data.size(), result.size());
-
-        for (size_t i = 0; i < data.size(); ++i)
-        {
-            ASSERT_EQ(data[i], result[i]);
-        }
+        ASSERT_THAT(result, ContainerEq(data));
     }
 }
 
