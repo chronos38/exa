@@ -5,7 +5,7 @@
 
 using namespace exa;
 using namespace testing;
-using namespace std::literals::chrono_literals;
+using namespace std::chrono_literals;
 
 namespace
 {
@@ -243,11 +243,7 @@ TEST(buffered_stream_test, copy_to_requires_flushing_of_writes)
         }
 
         auto r = d->to_array();
-
-        for (size_t i = 0; i < v.size(); ++i)
-        {
-            ASSERT_EQ(v[i], r[i]);
-        }
+        ASSERT_THAT(r, ContainerEq(v));
     }
 }
 
@@ -279,12 +275,9 @@ TEST(buffered_stream_test, copy_to_read_before_copy_copies_all_data)
 
         std::vector<uint8_t> expected(v.size() - 1);
         std::copy(std::next(std::begin(v), 1), std::end(v), std::begin(expected));
-        auto array = dst->to_array();
 
-        for (size_t i = 0; i < expected.size(); ++i)
-        {
-            ASSERT_EQ(expected[i], array[i]);
-        }
+        auto array = dst->to_array();
+        ASSERT_THAT(array, ContainerEq(expected));
     }
 }
 
@@ -303,10 +296,10 @@ TEST(buffered_stream_test, should_not_flush_underyling_stream_if_readonly)
 
         s->read_byte();
         s->flush();
-        ASSERT_EQ(0, tracker->called.flush);
+        ASSERT_THAT(tracker->called.flush, Eq(0));
 
         s->flush_async().get();
-        ASSERT_EQ(0, tracker->called.flush);
+        ASSERT_THAT(tracker->called.flush, Eq(0));
     }
 }
 
@@ -327,16 +320,16 @@ TEST(buffered_stream_test, should_always_flush_underlying_stream_if_writable)
         auto s = create_stream(tracker);
 
         s->flush();
-        ASSERT_EQ(1, tracker->called.flush);
+        ASSERT_THAT(tracker->called.flush, Eq(1));
 
         s->flush_async().get();
-        ASSERT_EQ(2, tracker->called.flush);
+        ASSERT_THAT(tracker->called.flush, Eq(2));
 
         s->write_byte(42);
         s->flush();
-        ASSERT_EQ(3, tracker->called.flush);
+        ASSERT_THAT(tracker->called.flush, Eq(3));
 
         s->flush_async().get();
-        ASSERT_EQ(4, tracker->called.flush);
+        ASSERT_THAT(tracker->called.flush, Eq(4));
     }
 }
