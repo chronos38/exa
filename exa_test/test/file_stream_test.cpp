@@ -4,8 +4,8 @@
 
 using namespace exa;
 using namespace testing;
-using namespace std::literals::chrono_literals;
-using namespace std::literals::string_literals;
+using namespace std::chrono_literals;
+using namespace std::string_literals;
 
 namespace
 {
@@ -81,8 +81,8 @@ TEST_F(file_stream_test, correct_size_and_position_after_writing_data_is_equal)
     auto v = "foo\nbar\n42\n"s;
     auto&& s = file_stream("1.txt", file_mode::open_or_create);
     s.write({reinterpret_cast<const uint8_t*>(v.data()), static_cast<ptrdiff_t>(v.size())});
-    ASSERT_EQ(v.size(), static_cast<size_t>(s.size()));
-    ASSERT_EQ(v.size(), static_cast<size_t>(s.position()));
+    ASSERT_THAT(static_cast<size_t>(s.size()), Eq(v.size()));
+    ASSERT_THAT(static_cast<size_t>(s.position()), Eq(v.size()));
 }
 
 TEST_F(file_stream_test, correct_position_after_seeking)
@@ -90,9 +90,9 @@ TEST_F(file_stream_test, correct_position_after_seeking)
     auto v = "foo\nbar\n42\n"s;
     auto&& s = file_stream("1.txt", file_mode::open_or_create);
     s.write({reinterpret_cast<const uint8_t*>(v.data()), static_cast<ptrdiff_t>(v.size())});
-    ASSERT_EQ(v.size(), static_cast<size_t>(s.size()));
+    ASSERT_THAT(static_cast<size_t>(s.size()), Eq(v.size()));
     s.seek(4, seek_origin::begin);
-    ASSERT_EQ(4, s.position());
+    ASSERT_THAT(s.position(), Eq(4));
 }
 
 TEST_F(file_stream_test, correct_size_after_setting_size)
@@ -106,22 +106,20 @@ TEST_F(file_stream_test, correct_position_after_setting_position)
 {
     auto&& s = file_stream("1.txt", file_mode::open_or_create);
     s.size(8192);
-    ASSERT_EQ(8192, s.size());
+    ASSERT_THAT(s.size(), Eq(8192));
     s.position(1024);
-    ASSERT_EQ(1024, s.position());
+    ASSERT_THAT(s.position(), Eq(1024));
 }
 
 TEST_F(file_stream_test, data_equal_after_writing_and_reading)
 {
-    auto v = "foo\nbar\n42\n"s;
+    auto d = "foo\nbar\n42\n"s;
+    auto v = std::vector<uint8_t>(reinterpret_cast<uint8_t*>(d.data()), reinterpret_cast<uint8_t*>(d.data()) + d.size());
     std::vector<uint8_t> b(v.size());
     auto&& s = file_stream("1.txt", file_mode::open_or_create);
-    s.write({reinterpret_cast<const uint8_t*>(v.data()), static_cast<ptrdiff_t>(v.size())});
+    s.write(v);
     s.position(0);
-    ASSERT_EQ(v.size(), static_cast<size_t>(s.read_async(b).get()));
 
-    for (size_t i = 0; i < v.size(); ++i)
-    {
-        ASSERT_EQ(v[i], b[i]);
-    }
+    ASSERT_THAT(static_cast<size_t>(s.read_async(b).get()), Eq(v.size()));
+    ASSERT_THAT(b, ContainerEq(v));
 }
