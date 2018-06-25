@@ -4,7 +4,7 @@
 
 using namespace exa;
 using namespace testing;
-using namespace std::literals::chrono_literals;
+using namespace std::chrono_literals;
 
 TEST(tcp_listener_test, active_true_while_running)
 {

@@ -3,7 +3,7 @@
 
 using namespace exa;
 using namespace testing;
-using namespace std::literals::chrono_literals;
+using namespace std::chrono_literals;
 
 namespace
 {

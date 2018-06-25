@@ -3,7 +3,8 @@
 #include <exa/tcp_listener.hpp>
 
 using namespace exa;
-using namespace std::literals::chrono_literals;
+using namespace testing;
+using namespace std::chrono_literals;
 
 TEST(tcp_client_test, ctor_null_socket_throws)
 {
@@ -81,7 +82,7 @@ TEST(tcp_client_test, connect_async_dns_end_point_success)
         auto str = stream.str();
         auto request = reinterpret_cast<uint8_t*>(str.data());
         s->write_async(gsl::span<uint8_t>(request, str.size())).get();
-        ASSERT_NE(-1, peer->stream()->read_byte());
+        ASSERT_THAT(peer->stream()->read_byte(), Ne(-1));
     }
 }
 
@@ -89,7 +90,7 @@ TEST(tcp_client_test, connected_available_initial_values_default)
 {
     tcp_client c;
     ASSERT_FALSE(c.connected());
-    ASSERT_EQ(0, c.available());
+    ASSERT_THAT(c.available(), Eq(0));
 }
 
 #ifdef _WIN32
@@ -114,15 +115,15 @@ TEST(tcp_client_test, roundtrip_linger_option_get_equals_set)
 
     c.linger_state(linger_option{true, 42s});
     ASSERT_TRUE(c.linger_state().enabled);
-    ASSERT_EQ(c.linger_state().linger_time, 42s);
+    ASSERT_THAT(c.linger_state().linger_time, Eq(42s));
 
     c.linger_state(linger_option{true, 0s});
     ASSERT_TRUE(c.linger_state().enabled);
-    ASSERT_EQ(c.linger_state().linger_time, 0s);
+    ASSERT_THAT(c.linger_state().linger_time, Eq(0s));
 
     c.linger_state(linger_option{false, 0s});
     ASSERT_FALSE(c.linger_state().enabled);
-    ASSERT_EQ(c.linger_state().linger_time, 0s);
+    ASSERT_THAT(c.linger_state().linger_time, Eq(0s));
 }
 
 TEST(tcp_client_test, roundtrip_no_delay_get_equals_set)
@@ -141,10 +142,10 @@ TEST(tcp_client_test, roundtrip_receive_buffer_size_get_equals_set)
     tcp_client c;
 
     c.receive_buffer(4096);
-    ASSERT_LE(4096, c.receive_buffer());
+    ASSERT_THAT(c.receive_buffer(), Ge(4096));
 
     c.receive_buffer(8192);
-    ASSERT_LE(8192, c.receive_buffer());
+    ASSERT_THAT(c.receive_buffer(), Ge(8192));
 }
 
 TEST(tcp_client_test, roundtrip_send_buffer_size_get_equals_set)
@@ -152,10 +153,10 @@ TEST(tcp_client_test, roundtrip_send_buffer_size_get_equals_set)
     tcp_client c;
 
     c.send_buffer(4096);
-    ASSERT_LE(4096, c.send_buffer());
+    ASSERT_THAT(c.send_buffer(), Ge(4096));
 
     c.send_buffer(8192);
-    ASSERT_LE(8192, c.send_buffer());
+    ASSERT_THAT(c.send_buffer(), Ge(8192));
 }
 
 TEST(tcp_client_test, roundtrip_receive_timeout_get_equals_set)
@@ -163,10 +164,10 @@ TEST(tcp_client_test, roundtrip_receive_timeout_get_equals_set)
     tcp_client c;
 
     c.receive_timeout(1ms);
-    ASSERT_LE(1ms, c.receive_timeout());
+    ASSERT_THAT(c.receive_timeout(), Eq(1ms));
 
     c.receive_timeout(0ms);
-    ASSERT_EQ(0ms, c.receive_timeout());
+    ASSERT_THAT(c.receive_timeout(), Eq(0ms));
 }
 
 TEST(tcp_client_test, roundtrip_send_timeout_get_equals_set)
@@ -174,10 +175,10 @@ TEST(tcp_client_test, roundtrip_send_timeout_get_equals_set)
     tcp_client c;
 
     c.send_timeout(1ms);
-    ASSERT_LE(1ms, c.send_timeout());
+    ASSERT_THAT(c.send_timeout(), Eq(1ms));
 
     c.send_timeout(0ms);
-    ASSERT_EQ(0ms, c.send_timeout());
+    ASSERT_THAT(c.send_timeout(), Eq(0ms));
 }
 
 TEST(tcp_client_test, properties_persist_after_connect)
@@ -194,9 +195,9 @@ TEST(tcp_client_test, properties_persist_after_connect)
     c.connect_async("localhost", port).get();
 
     ASSERT_TRUE(c.linger_state().enabled);
-    ASSERT_EQ(1s, c.linger_state().linger_time);
-    ASSERT_LE(42ms, c.receive_timeout());
-    ASSERT_LE(84ms, c.send_timeout());
+    ASSERT_THAT(c.linger_state().linger_time, Eq(1s));
+    ASSERT_THAT(c.receive_timeout(), Ge(42ms));
+    ASSERT_THAT(c.send_timeout(), Ge(84ms));
 }
 
 TEST(tcp_client_test, close_cancels_connect_async)
