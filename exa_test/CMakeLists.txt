@@ -11,6 +11,7 @@ set(
     "${CMAKE_CURRENT_SOURCE_DIR}/source/pch.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/pch.h"
     ${SRCROOT}/buffered_stream_test.cpp
+    ${SRCROOT}/crypto_stream_test.cpp
     ${SRCROOT}/file_stream_test.cpp
     ${SRCROOT}/network_stream_test.cpp
     ${SRCROOT}/task_test.cpp

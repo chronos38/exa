@@ -13,6 +13,8 @@ set(
     ${SRCROOT}/buffered_stream.cpp
     ${INCROOT}/concepts.hpp
     ${INCROOT}/crypto_block_cipher.hpp
+    ${INCROOT}/crypto_stream.hpp
+    ${SRCROOT}/crypto_stream.cpp
     ${INCROOT}/crypto_transform.hpp
     ${INCROOT}/dependencies.hpp
     ${INCROOT}/endpoint.hpp

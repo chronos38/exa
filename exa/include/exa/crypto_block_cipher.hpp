@@ -25,7 +25,7 @@ namespace exa
 
         virtual size_t block_size() const override
         {
-            return algorithm_.OptimalBlockSize();
+            return algorithm_.MandatoryBlockSize();
         }
 
         virtual size_t optimal_input_size() const override
@@ -33,20 +33,36 @@ namespace exa
             return algorithm_.OptimalBlockSize() - algorithm_.GetOptimalBlockSizeUsed();
         }
 
-        virtual std::vector<uint8_t> transform_final_block(gsl::span<const uint8_t> input) override
+        virtual std::vector<uint8_t> transform_final_block(gsl::span<const uint8_t> i) override
         {
-            std::vector<uint8_t> v(algorithm_.OptimalBlockSize());
-            algorithm_.ProcessData(v.data(), input.data(), static_cast<size_t>(input.size()));
-            return v;
+            std::vector<uint8_t> o(algorithm_.MinLastBlockSize());
+            auto n = algorithm_.ProcessLastBlock(o.data(), static_cast<size_t>(o.size()), i.data(),
+                                                 static_cast<size_t>(i.size()));
+            o.resize(n);
+            return o;
         }
 
-        virtual size_t transform_block(gsl::span<const uint8_t> i, gsl::span<uint8_t> o) override
+        virtual void transform_block(gsl::span<const uint8_t> i, gsl::span<uint8_t> o) override
         {
-            return algorithm_.ProcessLastBlock(o.data(), static_cast<size_t>(o.size()), i.data(),
-                                               static_cast<size_t>(i.size()));
+            if (i.size() != o.size())
+            {
+                throw std::invalid_argument("Transform block needs two equally sized buffers.");
+            }
+
+            algorithm_.ProcessData(o.data(), i.data(), static_cast<size_t>(i.size()));
         }
 
     private:
+        virtual CryptoPP::StreamTransformation& stream_transformation() override
+        {
+            return algorithm_;
+        }
+
+        virtual const CryptoPP::StreamTransformation& stream_transformation() const override
+        {
+            return algorithm_;
+        }
+
         T algorithm_;
     };
 
