@@ -7,6 +7,7 @@
 #include <cryptopp/filters.h>
 
 #include <memory>
+#include <type_traits>
 
 namespace exa
 {
@@ -16,47 +17,33 @@ namespace exa
     public:
         virtual ~crypto_transform_algorithm() = default;
 
-        crypto_transform_algorithm(gsl::span<const uint8_t> key, gsl::span<const uint8_t> iv)
-            : algorithm_(key.data(), static_cast<size_t>(key.size()), iv.data())
+        crypto_transform_algorithm(gsl::span<const uint8_t> key, gsl::span<const uint8_t> iv, size_t feedback)
         {
+            algorithm_ = feedback == 0 ? T(key.data(), static_cast<size_t>(key.size()), iv.data())
+                                       : T(key.data(), static_cast<size_t>(key.size()), iv.data(), feedback);
+        }
+
+        virtual size_t block_size() const override
+        {
+            return algorithm_.OptimalBlockSize();
+        }
+
+        virtual size_t optimal_input_size() const override
+        {
+            return algorithm_.OptimalBlockSize() - algorithm_.GetOptimalBlockSizeUsed();
         }
 
         virtual std::vector<uint8_t> transform_final_block(gsl::span<const uint8_t> input) override
         {
-            std::vector<uint8_t> output(static_cast<size_t>(input.size()));
-            auto sink = new CryptoPP::ArraySink(output.data(), output.size());
-
-            try
-            {
-                CryptoPP::StreamTransformationFilter filter(algorithm_, sink);
-                auto n = filter.Put(input.data(), static_cast<size_t>(input.size()));
-                filter.MessageEnd();
-                output.resize(static_cast<size_t>(input.size() - n));
-                return output;
-            }
-            catch (...)
-            {
-                delete sink;
-                std::rethrow_exception(std::current_exception());
-            }
+            std::vector<uint8_t> v(algorithm_.OptimalBlockSize());
+            algorithm_.ProcessData(v.data(), input.data(), static_cast<size_t>(input.size()));
+            return v;
         }
 
-        virtual size_t transform_block(gsl::span<const uint8_t> input, gsl::span<uint8_t> output) override
+        virtual size_t transform_block(gsl::span<const uint8_t> i, gsl::span<uint8_t> o) override
         {
-            auto sink = new CryptoPP::ArraySink(output.data(), static_cast<size_t>(input.size()));
-
-            try
-            {
-                CryptoPP::StreamTransformationFilter filter(algorithm_, sink);
-                auto n = filter.Put(input.data(), static_cast<size_t>(input.size()));
-                filter.MessageEnd();
-                return static_cast<size_t>(input.size() - n);
-            }
-            catch (...)
-            {
-                delete sink;
-                std::rethrow_exception(std::current_exception());
-            }
+            return algorithm_.ProcessLastBlock(o.data(), static_cast<size_t>(o.size()), i.data(),
+                                               static_cast<size_t>(i.size()));
         }
 
     private:
@@ -74,17 +61,32 @@ namespace exa
             return T::BLOCKSIZE;
         }
 
-        virtual size_t min_key_length() const noexcept override
+        virtual size_t default_block_size() const noexcept override
+        {
+            return T::DEFAULT_BLOCKSIZE;
+        }
+
+        virtual size_t min_block_size() const noexcept override
+        {
+            return T::MIN_BLOCKSIZE;
+        }
+
+        virtual size_t max_block_size() const noexcept override
+        {
+            return T::MAX_BLOCKSIZE;
+        }
+
+        virtual size_t min_key_size() const noexcept override
         {
             return T::MIN_KEYLENGTH;
         }
 
-        virtual size_t max_key_length() const noexcept override
+        virtual size_t max_key_size() const noexcept override
         {
             return T::MAX_KEYLENGTH;
         }
 
-        virtual size_t default_key_length() const noexcept override
+        virtual size_t default_key_size() const noexcept override
         {
             return T::DEFAULT_KEYLENGTH;
         }
@@ -94,9 +96,14 @@ namespace exa
             return T::IV_REQUIREMENT;
         }
 
-        virtual size_t iv_length() const noexcept override
+        virtual size_t iv_size() const noexcept override
         {
             return T::IV_LENGTH;
+        }
+
+        virtual std::string name() const noexcept override
+        {
+            return T::StaticAlgorithmName();
         }
 
         virtual cipher_mode mode() const noexcept override
@@ -129,20 +136,50 @@ namespace exa
             iv_.assign(std::begin(iv), std::end(iv));
         }
 
+        virtual size_t feedback_size() const noexcept override
+        {
+            return feedback_;
+        }
+
+        virtual void feedback_size(size_t v) noexcept override
+        {
+            feedback_ = v;
+        }
+
+        virtual size_t valid_key_size(size_t size) const noexcept override
+        {
+            return T::StaticGetValidKeyLength(size);
+        }
+
+        virtual size_t valid_block_size(size_t block_size) const noexcept override
+        {
+            return T::StaticGetValidBlockSize(block_size);
+        }
+
+        virtual size_t valid_block_size(size_t key_size, size_t block_size) const noexcept override
+        {
+            return T::StaticGetValidBlockSize(key_size, block_size);
+        }
+
         virtual std::shared_ptr<crypto_transform> make_shared_decryptor() const override
         {
             switch (mode_)
             {
                 case cipher_mode::cbc:
-                    return std::make_unique<crypto_transform_algorithm<CryptoPP::CBC_Mode<T>::Decryption>>(key_, iv_);
+                    return std::make_unique<crypto_transform_algorithm<CryptoPP::CBC_Mode<T>::Decryption>>(key_, iv_,
+                                                                                                           feedback_);
                 case cipher_mode::cfb:
-                    return std::make_unique<crypto_transform_algorithm<CryptoPP::CFB_Mode<T>::Decryption>>(key_, iv_);
+                    return std::make_unique<crypto_transform_algorithm<CryptoPP::CFB_Mode<T>::Decryption>>(key_, iv_,
+                                                                                                           feedback_);
                 case cipher_mode::ctr:
-                    return std::make_unique<crypto_transform_algorithm<CryptoPP::CTR_Mode<T>::Decryption>>(key_, iv_);
+                    return std::make_unique<crypto_transform_algorithm<CryptoPP::CTR_Mode<T>::Decryption>>(key_, iv_,
+                                                                                                           feedback_);
                 case cipher_mode::ecb:
-                    return std::make_unique<crypto_transform_algorithm<CryptoPP::ECB_Mode<T>::Decryption>>(key_, iv_);
+                    return std::make_unique<crypto_transform_algorithm<CryptoPP::ECB_Mode<T>::Decryption>>(key_, iv_,
+                                                                                                           feedback_);
                 case cipher_mode::ofb:
-                    return std::make_unique<crypto_transform_algorithm<CryptoPP::OFB_Mode<T>::Decryption>>(key_, iv_);
+                    return std::make_unique<crypto_transform_algorithm<CryptoPP::OFB_Mode<T>::Decryption>>(key_, iv_,
+                                                                                                           feedback_);
             }
 
             throw std::invalid_argument("Received invalid cipher mode.");
@@ -154,15 +191,20 @@ namespace exa
             switch (mode)
             {
                 case cipher_mode::cbc:
-                    return std::make_unique<crypto_transform_algorithm<CryptoPP::CBC_Mode<T>::Decryption>>(key, iv);
+                    return std::make_unique<crypto_transform_algorithm<CryptoPP::CBC_Mode<T>::Decryption>>(key, iv,
+                                                                                                           feedback_);
                 case cipher_mode::cfb:
-                    return std::make_unique<crypto_transform_algorithm<CryptoPP::CFB_Mode<T>::Decryption>>(key, iv);
+                    return std::make_unique<crypto_transform_algorithm<CryptoPP::CFB_Mode<T>::Decryption>>(key, iv,
+                                                                                                           feedback_);
                 case cipher_mode::ctr:
-                    return std::make_unique<crypto_transform_algorithm<CryptoPP::CTR_Mode<T>::Decryption>>(key, iv);
+                    return std::make_unique<crypto_transform_algorithm<CryptoPP::CTR_Mode<T>::Decryption>>(key, iv,
+                                                                                                           feedback_);
                 case cipher_mode::ecb:
-                    return std::make_unique<crypto_transform_algorithm<CryptoPP::ECB_Mode<T>::Decryption>>(key, iv);
+                    return std::make_unique<crypto_transform_algorithm<CryptoPP::ECB_Mode<T>::Decryption>>(key, iv,
+                                                                                                           feedback_);
                 case cipher_mode::ofb:
-                    return std::make_unique<crypto_transform_algorithm<CryptoPP::OFB_Mode<T>::Decryption>>(key, iv);
+                    return std::make_unique<crypto_transform_algorithm<CryptoPP::OFB_Mode<T>::Decryption>>(key, iv,
+                                                                                                           feedback_);
             }
 
             throw std::invalid_argument("Received invalid cipher mode.");
@@ -173,15 +215,20 @@ namespace exa
             switch (mode_)
             {
                 case cipher_mode::cbc:
-                    return std::make_unique<crypto_transform_algorithm<CryptoPP::CBC_Mode<T>::Encryption>>(key_, iv_);
+                    return std::make_unique<crypto_transform_algorithm<CryptoPP::CBC_Mode<T>::Encryption>>(key_, iv_,
+                                                                                                           feedback_);
                 case cipher_mode::cfb:
-                    return std::make_unique<crypto_transform_algorithm<CryptoPP::CFB_Mode<T>::Encryption>>(key_, iv_);
+                    return std::make_unique<crypto_transform_algorithm<CryptoPP::CFB_Mode<T>::Encryption>>(key_, iv_,
+                                                                                                           feedback_);
                 case cipher_mode::ctr:
-                    return std::make_unique<crypto_transform_algorithm<CryptoPP::CTR_Mode<T>::Encryption>>(key_, iv_);
+                    return std::make_unique<crypto_transform_algorithm<CryptoPP::CTR_Mode<T>::Encryption>>(key_, iv_,
+                                                                                                           feedback_);
                 case cipher_mode::ecb:
-                    return std::make_unique<crypto_transform_algorithm<CryptoPP::ECB_Mode<T>::Encryption>>(key_, iv_);
+                    return std::make_unique<crypto_transform_algorithm<CryptoPP::ECB_Mode<T>::Encryption>>(key_, iv_,
+                                                                                                           feedback_);
                 case cipher_mode::ofb:
-                    return std::make_unique<crypto_transform_algorithm<CryptoPP::OFB_Mode<T>::Encryption>>(key_, iv_);
+                    return std::make_unique<crypto_transform_algorithm<CryptoPP::OFB_Mode<T>::Encryption>>(key_, iv_,
+                                                                                                           feedback_);
             }
 
             throw std::invalid_argument("Received invalid cipher mode.");
@@ -193,15 +240,20 @@ namespace exa
             switch (mode)
             {
                 case cipher_mode::cbc:
-                    return std::make_unique<crypto_transform_algorithm<CryptoPP::CBC_Mode<T>::Encryption>>(key, iv);
+                    return std::make_unique<crypto_transform_algorithm<CryptoPP::CBC_Mode<T>::Encryption>>(key, iv,
+                                                                                                           feedback_);
                 case cipher_mode::cfb:
-                    return std::make_unique<crypto_transform_algorithm<CryptoPP::CFB_Mode<T>::Encryption>>(key, iv);
+                    return std::make_unique<crypto_transform_algorithm<CryptoPP::CFB_Mode<T>::Encryption>>(key, iv,
+                                                                                                           feedback_);
                 case cipher_mode::ctr:
-                    return std::make_unique<crypto_transform_algorithm<CryptoPP::CTR_Mode<T>::Encryption>>(key, iv);
+                    return std::make_unique<crypto_transform_algorithm<CryptoPP::CTR_Mode<T>::Encryption>>(key, iv,
+                                                                                                           feedback_);
                 case cipher_mode::ecb:
-                    return std::make_unique<crypto_transform_algorithm<CryptoPP::ECB_Mode<T>::Encryption>>(key, iv);
+                    return std::make_unique<crypto_transform_algorithm<CryptoPP::ECB_Mode<T>::Encryption>>(key, iv,
+                                                                                                           feedback_);
                 case cipher_mode::ofb:
-                    return std::make_unique<crypto_transform_algorithm<CryptoPP::OFB_Mode<T>::Encryption>>(key, iv);
+                    return std::make_unique<crypto_transform_algorithm<CryptoPP::OFB_Mode<T>::Encryption>>(key, iv,
+                                                                                                           feedback_);
             }
 
             throw std::invalid_argument("Received invalid cipher mode.");
@@ -212,15 +264,20 @@ namespace exa
             switch (mode_)
             {
                 case cipher_mode::cbc:
-                    return std::make_unique<crypto_transform_algorithm<CryptoPP::CBC_Mode<T>::Decryption>>(key_, iv_);
+                    return std::make_unique<crypto_transform_algorithm<CryptoPP::CBC_Mode<T>::Decryption>>(key_, iv_,
+                                                                                                           feedback_);
                 case cipher_mode::cfb:
-                    return std::make_unique<crypto_transform_algorithm<CryptoPP::CFB_Mode<T>::Decryption>>(key_, iv_);
+                    return std::make_unique<crypto_transform_algorithm<CryptoPP::CFB_Mode<T>::Decryption>>(key_, iv_,
+                                                                                                           feedback_);
                 case cipher_mode::ctr:
-                    return std::make_unique<crypto_transform_algorithm<CryptoPP::CTR_Mode<T>::Decryption>>(key_, iv_);
+                    return std::make_unique<crypto_transform_algorithm<CryptoPP::CTR_Mode<T>::Decryption>>(key_, iv_,
+                                                                                                           feedback_);
                 case cipher_mode::ecb:
-                    return std::make_unique<crypto_transform_algorithm<CryptoPP::ECB_Mode<T>::Decryption>>(key_, iv_);
+                    return std::make_unique<crypto_transform_algorithm<CryptoPP::ECB_Mode<T>::Decryption>>(key_, iv_,
+                                                                                                           feedback_);
                 case cipher_mode::ofb:
-                    return std::make_unique<crypto_transform_algorithm<CryptoPP::OFB_Mode<T>::Decryption>>(key_, iv_);
+                    return std::make_unique<crypto_transform_algorithm<CryptoPP::OFB_Mode<T>::Decryption>>(key_, iv_,
+                                                                                                           feedback_);
             }
 
             throw std::invalid_argument("Received invalid cipher mode.");
@@ -232,15 +289,20 @@ namespace exa
             switch (mode)
             {
                 case cipher_mode::cbc:
-                    return std::make_unique<crypto_transform_algorithm<CryptoPP::CBC_Mode<T>::Decryption>>(key, iv);
+                    return std::make_unique<crypto_transform_algorithm<CryptoPP::CBC_Mode<T>::Decryption>>(key, iv,
+                                                                                                           feedback_);
                 case cipher_mode::cfb:
-                    return std::make_unique<crypto_transform_algorithm<CryptoPP::CFB_Mode<T>::Decryption>>(key, iv);
+                    return std::make_unique<crypto_transform_algorithm<CryptoPP::CFB_Mode<T>::Decryption>>(key, iv,
+                                                                                                           feedback_);
                 case cipher_mode::ctr:
-                    return std::make_unique<crypto_transform_algorithm<CryptoPP::CTR_Mode<T>::Decryption>>(key, iv);
+                    return std::make_unique<crypto_transform_algorithm<CryptoPP::CTR_Mode<T>::Decryption>>(key, iv,
+                                                                                                           feedback_);
                 case cipher_mode::ecb:
-                    return std::make_unique<crypto_transform_algorithm<CryptoPP::ECB_Mode<T>::Decryption>>(key, iv);
+                    return std::make_unique<crypto_transform_algorithm<CryptoPP::ECB_Mode<T>::Decryption>>(key, iv,
+                                                                                                           feedback_);
                 case cipher_mode::ofb:
-                    return std::make_unique<crypto_transform_algorithm<CryptoPP::OFB_Mode<T>::Decryption>>(key, iv);
+                    return std::make_unique<crypto_transform_algorithm<CryptoPP::OFB_Mode<T>::Decryption>>(key, iv,
+                                                                                                           feedback_);
             }
 
             throw std::invalid_argument("Received invalid cipher mode.");
@@ -251,15 +313,20 @@ namespace exa
             switch (mode_)
             {
                 case cipher_mode::cbc:
-                    return std::make_unique<crypto_transform_algorithm<CryptoPP::CBC_Mode<T>::Encryption>>(key_, iv_);
+                    return std::make_unique<crypto_transform_algorithm<CryptoPP::CBC_Mode<T>::Encryption>>(key_, iv_,
+                                                                                                           feedback_);
                 case cipher_mode::cfb:
-                    return std::make_unique<crypto_transform_algorithm<CryptoPP::CFB_Mode<T>::Encryption>>(key_, iv_);
+                    return std::make_unique<crypto_transform_algorithm<CryptoPP::CFB_Mode<T>::Encryption>>(key_, iv_,
+                                                                                                           feedback_);
                 case cipher_mode::ctr:
-                    return std::make_unique<crypto_transform_algorithm<CryptoPP::CTR_Mode<T>::Encryption>>(key_, iv_);
+                    return std::make_unique<crypto_transform_algorithm<CryptoPP::CTR_Mode<T>::Encryption>>(key_, iv_,
+                                                                                                           feedback_);
                 case cipher_mode::ecb:
-                    return std::make_unique<crypto_transform_algorithm<CryptoPP::ECB_Mode<T>::Encryption>>(key_, iv_);
+                    return std::make_unique<crypto_transform_algorithm<CryptoPP::ECB_Mode<T>::Encryption>>(key_, iv_,
+                                                                                                           feedback_);
                 case cipher_mode::ofb:
-                    return std::make_unique<crypto_transform_algorithm<CryptoPP::OFB_Mode<T>::Encryption>>(key_, iv_);
+                    return std::make_unique<crypto_transform_algorithm<CryptoPP::OFB_Mode<T>::Encryption>>(key_, iv_,
+                                                                                                           feedback_);
             }
 
             throw std::invalid_argument("Received invalid cipher mode.");
@@ -271,15 +338,20 @@ namespace exa
             switch (mode)
             {
                 case cipher_mode::cbc:
-                    return std::make_unique<crypto_transform_algorithm<CryptoPP::CBC_Mode<T>::Encryption>>(key, iv);
+                    return std::make_unique<crypto_transform_algorithm<CryptoPP::CBC_Mode<T>::Encryption>>(key, iv,
+                                                                                                           feedback_);
                 case cipher_mode::cfb:
-                    return std::make_unique<crypto_transform_algorithm<CryptoPP::CFB_Mode<T>::Encryption>>(key, iv);
+                    return std::make_unique<crypto_transform_algorithm<CryptoPP::CFB_Mode<T>::Encryption>>(key, iv,
+                                                                                                           feedback_);
                 case cipher_mode::ctr:
-                    return std::make_unique<crypto_transform_algorithm<CryptoPP::CTR_Mode<T>::Encryption>>(key, iv);
+                    return std::make_unique<crypto_transform_algorithm<CryptoPP::CTR_Mode<T>::Encryption>>(key, iv,
+                                                                                                           feedback_);
                 case cipher_mode::ecb:
-                    return std::make_unique<crypto_transform_algorithm<CryptoPP::ECB_Mode<T>::Encryption>>(key, iv);
+                    return std::make_unique<crypto_transform_algorithm<CryptoPP::ECB_Mode<T>::Encryption>>(key, iv,
+                                                                                                           feedback_);
                 case cipher_mode::ofb:
-                    return std::make_unique<crypto_transform_algorithm<CryptoPP::OFB_Mode<T>::Encryption>>(key, iv);
+                    return std::make_unique<crypto_transform_algorithm<CryptoPP::OFB_Mode<T>::Encryption>>(key, iv,
+                                                                                                           feedback_);
             }
 
             throw std::invalid_argument("Received invalid cipher mode.");
@@ -289,5 +361,6 @@ namespace exa
         cipher_mode mode_ = cipher_mode::ctr;
         std::vector<uint8_t> key_;
         std::vector<uint8_t> iv_;
+        size_t feedback_ = 0;
     };
 }
