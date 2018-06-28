@@ -1,6 +1,6 @@
 #pragma once
 
-#include <gsl/span>
+#include <gsl/gsl>
 
 #include <vector>
 #include <cstdint>

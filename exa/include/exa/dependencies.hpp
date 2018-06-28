@@ -1,20 +1,14 @@
 #pragma once
 
 #ifdef _WIN32
+
+#ifdef _MSC_VER
 #pragma warning(push, 0)
-
-#ifndef _SILENCE_ALL_CXX17_DEPRECATION_WARNINGS
-#define _SILENCE_ALL_CXX17_DEPRECATION_WARNINGS
-#endif
-
-#ifndef NOMINMAX
-#define NOMINMAX
 #endif
 
 #include <WinSock2.h>
 #include <WS2tcpip.h>
 #include <Windows.h>
-#pragma comment(lib, "Ws2_32.lib")
 
 namespace exa
 {
@@ -56,6 +50,11 @@ namespace exa
     }
 }
 
+#ifdef _MSC_VER
+#pragma warning(pop)
+#pragma comment(lib, "Ws2_32.lib")
+#endif
+
 #else
 
 #include <cerrno>
@@ -74,7 +73,3 @@ namespace exa
 #endif
 
 #include <gsl/gsl>
-
-#ifdef _WIN32
-#pragma warning(pop)
-#endif

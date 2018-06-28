@@ -16,18 +16,13 @@ set(
     ${SRCROOT}/udp_client_test.cpp
 )
 
-if(WIN32)
-    add_definitions(
-        -D_UNICODE
-        -DUNICODE
-        -D_CRT_SECURE_NO_WARNINGS
-    )
-endif()
-
 find_package(Threads)
-find_package(gtest)
-find_package(cryptopp)
+find_package(GTest REQUIRED)
+find_package(cryptopp CONFIG REQUIRED)
 find_package(gsl)
+
+enable_testing()
+
 add_executable(${PROJECT_NAME}_test ${SOURCES})
 
 target_include_directories(
@@ -39,8 +34,10 @@ target_include_directories(
 target_link_libraries(
     ${PROJECT_NAME}_test
     ${PROJECT_NAME}
-    gtest
-    gmock
-    cryptopp
+    GTest::GTest
+    GTest::Main
+    cryptopp-static
     Threads::Threads
 )
+
+add_test(AllTestsInMain ${PROJECT_NAME}_test)

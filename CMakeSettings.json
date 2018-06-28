@@ -13,8 +13,12 @@
       "ctestCommandArgs": "",
       "variables": [
         {
-          "name": "",
+          "name": "CMAKE_TOOLCHAIN_FILE",
           "value": "${env.VCPKG_DIR}/scripts/buildsystems/vcpkg.cmake"
+        },
+        {
+          "name": "VCPKG_TARGET_TRIPLET",
+          "value": "x86-windows"
         }
       ]
     },
@@ -30,8 +34,12 @@
       "ctestCommandArgs": "",
       "variables": [
         {
-          "name": "",
+          "name": "CMAKE_TOOLCHAIN_FILE",
           "value": "${env.VCPKG_DIR}/scripts/buildsystems/vcpkg.cmake"
+        },
+        {
+          "name": "VCPKG_TARGET_TRIPLET",
+          "value": "x86-windows"
         }
       ]
     },
@@ -47,8 +55,12 @@
       "ctestCommandArgs": "",
       "variables": [
         {
-          "name": "",
+          "name": "CMAKE_TOOLCHAIN_FILE",
           "value": "${env.VCPKG_DIR}/scripts/buildsystems/vcpkg.cmake"
+        },
+        {
+          "name": "VCPKG_TARGET_TRIPLET",
+          "value": "x64-windows"
         }
       ]
     },
@@ -64,8 +76,12 @@
       "ctestCommandArgs": "",
       "variables": [
         {
-          "name": "",
+          "name": "CMAKE_TOOLCHAIN_FILE",
           "value": "${env.VCPKG_DIR}/scripts/buildsystems/vcpkg.cmake"
+        },
+        {
+          "name": "VCPKG_TARGET_TRIPLET",
+          "value": "x64-windows"
         }
       ]
     },

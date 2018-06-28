@@ -40,19 +40,13 @@ set(
     ${SRCROOT}/udp_client.cpp
 )
 
-if(WIN32)
-    add_definitions(
-        -D_UNICODE
-        -DUNICODE
-    )
-endif()
-
-find_package(cryptopp)
+find_package(Threads)
+find_package(cryptopp CONFIG REQUIRED)
 find_package(gsl)
 
 add_library(${PROJECT_NAME} STATIC ${SOURCES})
 
 target_include_directories(
-    ${PROJECT_NAME}_test
-    PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include"
+    ${PROJECT_NAME}
+    PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include"
 )

@@ -92,20 +92,20 @@ TEST_P(crypto_stream_test, encrypt_and_decrypt_string)
     for (auto&& cipher : ciphers)
     {
         auto algorithm = make_shared_symmetric_algorithm(GetParam());
-        // auto key_size = algorithm->default_key_size();
-        // auto key = std::vector<uint8_t>(key_size);
-        // auto iv_size = algorithm->block_size();
-        // auto iv = std::vector<uint8_t>(iv_size, 0);
+        auto key_size = algorithm->default_key_size();
+        auto key = std::vector<uint8_t>(key_size);
+        auto iv_size = algorithm->block_size();
+        auto iv = std::vector<uint8_t>(iv_size, 0);
 
-        // for (size_t i = 0; i < key_size; ++i)
-        //{
-        //    key[i] = static_cast<uint8_t>(i);
-        //}
+        for (size_t i = 0; i < key_size; ++i)
+        {
+            key[i] = static_cast<uint8_t>(i);
+        }
 
         auto text = "This is a string for encryption testing. Let's get real here!"s;
         auto encrypted = encrypt_string_to_bytes(cipher, algorithm, text);
         auto decrypted = decrypt_string_from_bytes(cipher, algorithm, encrypted);
 
-        ASSERT_THAT(decrypted, StrEq(text));
+        ASSERT_THAT(decrypted.c_str(), StrEq(text));
     }
 }
