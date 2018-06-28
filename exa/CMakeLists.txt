@@ -1,7 +1,3 @@
-include_directories(
-    "${CMAKE_CURRENT_SOURCE_DIR}/include"
-    SYSTEM "${CMAKE_CURRENT_SOURCE_DIR}/../third_party/include"
-)
 set(INCROOT "${CMAKE_CURRENT_SOURCE_DIR}/include/exa")
 set(SRCROOT "${CMAKE_CURRENT_SOURCE_DIR}/source")
 
@@ -51,4 +47,12 @@ if(WIN32)
     )
 endif()
 
+find_package(cryptopp)
+find_package(gsl)
+
 add_library(${PROJECT_NAME} STATIC ${SOURCES})
+
+target_include_directories(
+    ${PROJECT_NAME}_test
+    PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include"
+)

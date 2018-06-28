@@ -20,6 +20,15 @@ namespace exa
         ctr
     };
 
+    enum iv_requirement
+    {
+        unique = 0,
+        random,
+        unpredictable_random,
+        internally_generated,
+        not_resynchronizable
+    };
+
     class symmetric_algorithm
     {
     public:
@@ -33,7 +42,7 @@ namespace exa
         virtual size_t min_key_size() const noexcept = 0;
         virtual size_t max_key_size() const noexcept = 0;
         virtual size_t default_key_size() const noexcept = 0;
-        virtual size_t iv_requirement() const noexcept = 0;
+        virtual exa::iv_requirement iv_requirement() const noexcept = 0;
         virtual size_t iv_size() const noexcept = 0;
 
         virtual std::string name() const noexcept = 0;
@@ -52,16 +61,20 @@ namespace exa
         virtual size_t valid_block_size(size_t key_size, size_t block_size) const noexcept = 0;
 
         virtual std::shared_ptr<crypto_transform> make_shared_decryptor() const = 0;
+        virtual std::shared_ptr<crypto_transform> make_shared_decryptor(cipher_mode mode) const = 0;
         virtual std::shared_ptr<crypto_transform> make_shared_decryptor(cipher_mode mode, gsl::span<const uint8_t> key,
                                                                         gsl::span<const uint8_t> iv) const = 0;
         virtual std::shared_ptr<crypto_transform> make_shared_encryptor() const = 0;
+        virtual std::shared_ptr<crypto_transform> make_shared_encryptor(cipher_mode mode) const = 0;
         virtual std::shared_ptr<crypto_transform> make_shared_encryptor(cipher_mode mode, gsl::span<const uint8_t> key,
                                                                         gsl::span<const uint8_t> iv) const = 0;
 
         virtual std::unique_ptr<crypto_transform> make_unique_decryptor() const = 0;
+        virtual std::unique_ptr<crypto_transform> make_unique_decryptor(cipher_mode mode) const = 0;
         virtual std::unique_ptr<crypto_transform> make_unique_decryptor(cipher_mode mode, gsl::span<const uint8_t> key,
                                                                         gsl::span<const uint8_t> iv) const = 0;
         virtual std::unique_ptr<crypto_transform> make_unique_encryptor() const = 0;
+        virtual std::unique_ptr<crypto_transform> make_unique_encryptor(cipher_mode mode) const = 0;
         virtual std::unique_ptr<crypto_transform> make_unique_encryptor(cipher_mode mode, gsl::span<const uint8_t> key,
                                                                         gsl::span<const uint8_t> iv) const = 0;
     };

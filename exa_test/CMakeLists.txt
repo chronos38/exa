@@ -1,8 +1,4 @@
-include_directories(
-    "${CMAKE_CURRENT_SOURCE_DIR}/include"
-    "${CMAKE_CURRENT_SOURCE_DIR}/../exa/include"
-    SYSTEM "${CMAKE_CURRENT_SOURCE_DIR}/../third_party/include"
-)
+
 set(SRCROOT "${CMAKE_CURRENT_SOURCE_DIR}/test")
 
 set(
@@ -29,7 +25,17 @@ if(WIN32)
 endif()
 
 find_package(Threads)
+find_package(gtest)
+find_package(cryptopp)
+find_package(gsl)
 add_executable(${PROJECT_NAME}_test ${SOURCES})
+
+target_include_directories(
+    ${PROJECT_NAME}_test
+    PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include"
+    PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../exa/include"
+)
+
 target_link_libraries(
     ${PROJECT_NAME}_test
     ${PROJECT_NAME}

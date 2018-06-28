@@ -10,7 +10,13 @@
       "installRoot": "${env.USERPROFILE}\\CMakeBuilds\\${workspaceHash}\\install\\${name}",
       "cmakeCommandArgs": "",
       "buildCommandArgs": "-v",
-      "ctestCommandArgs": ""
+      "ctestCommandArgs": "",
+      "variables": [
+        {
+          "name": "",
+          "value": "${env.VCPKG_DIR}/scripts/buildsystems/vcpkg.cmake"
+        }
+      ]
     },
     {
       "name": "x86-Release",
@@ -21,7 +27,13 @@
       "installRoot": "${env.USERPROFILE}\\CMakeBuilds\\${workspaceHash}\\install\\${name}",
       "cmakeCommandArgs": "",
       "buildCommandArgs": "-v",
-      "ctestCommandArgs": ""
+      "ctestCommandArgs": "",
+      "variables": [
+        {
+          "name": "",
+          "value": "${env.VCPKG_DIR}/scripts/buildsystems/vcpkg.cmake"
+        }
+      ]
     },
     {
       "name": "x64-Debug",
@@ -32,7 +44,13 @@
       "installRoot": "${env.USERPROFILE}\\CMakeBuilds\\${workspaceHash}\\install\\${name}",
       "cmakeCommandArgs": "",
       "buildCommandArgs": "-v",
-      "ctestCommandArgs": ""
+      "ctestCommandArgs": "",
+      "variables": [
+        {
+          "name": "",
+          "value": "${env.VCPKG_DIR}/scripts/buildsystems/vcpkg.cmake"
+        }
+      ]
     },
     {
       "name": "x64-Release",
@@ -43,7 +61,13 @@
       "installRoot": "${env.USERPROFILE}\\CMakeBuilds\\${workspaceHash}\\install\\${name}",
       "cmakeCommandArgs": "",
       "buildCommandArgs": "-v",
-      "ctestCommandArgs": ""
+      "ctestCommandArgs": "",
+      "variables": [
+        {
+          "name": "",
+          "value": "${env.VCPKG_DIR}/scripts/buildsystems/vcpkg.cmake"
+        }
+      ]
     },
     {
       "name": "Linux-Debug",
