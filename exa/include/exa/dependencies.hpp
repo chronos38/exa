@@ -6,6 +6,10 @@
 #pragma warning(push, 0)
 #endif
 
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+
 #include <WinSock2.h>
 #include <WS2tcpip.h>
 #include <Windows.h>
