@@ -8,10 +8,6 @@ set(
     ${INCROOT}/buffered_stream.hpp
     ${SRCROOT}/buffered_stream.cpp
     ${INCROOT}/concepts.hpp
-    ${INCROOT}/crypto_block_cipher.hpp
-    ${INCROOT}/crypto_stream.hpp
-    ${SRCROOT}/crypto_stream.cpp
-    ${INCROOT}/crypto_transform.hpp
     ${INCROOT}/dependencies.hpp
     ${INCROOT}/endpoint.hpp
     ${SRCROOT}/endpoint.cpp
@@ -28,8 +24,6 @@ set(
     ${SRCROOT}/socket.cpp
     ${INCROOT}/stream.hpp
     ${SRCROOT}/stream.cpp
-    ${INCROOT}/symmetric_algorithm.hpp
-    ${SRCROOT}/symmetric_algorithm.cpp
     ${INCROOT}/task.hpp
     ${SRCROOT}/task.cpp
     ${INCROOT}/tcp_client.hpp
@@ -40,8 +34,7 @@ set(
     ${SRCROOT}/udp_client.cpp
 )
 
-find_package(Threads)
-find_package(cryptopp CONFIG REQUIRED)
+find_package(Threads REQUIRED)
 find_package(gsl)
 
 add_library(${PROJECT_NAME} STATIC ${SOURCES})

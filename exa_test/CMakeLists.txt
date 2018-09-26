@@ -7,7 +7,6 @@ set(
     "${CMAKE_CURRENT_SOURCE_DIR}/source/pch.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/include/pch.h"
     ${SRCROOT}/buffered_stream_test.cpp
-    ${SRCROOT}/crypto_stream_test.cpp
     ${SRCROOT}/file_stream_test.cpp
     ${SRCROOT}/network_stream_test.cpp
     ${SRCROOT}/task_test.cpp
@@ -16,9 +15,8 @@ set(
     ${SRCROOT}/udp_client_test.cpp
 )
 
-find_package(Threads)
+find_package(Threads REQUIRED)
 find_package(GTest REQUIRED)
-find_package(cryptopp CONFIG REQUIRED)
 find_package(gsl)
 
 enable_testing()
@@ -36,7 +34,6 @@ target_link_libraries(
     ${PROJECT_NAME}
     GTest::GTest
     GTest::Main
-    cryptopp-static
     Threads::Threads
 )
 
