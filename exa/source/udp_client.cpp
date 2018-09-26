@@ -203,11 +203,10 @@ namespace exa
     std::future<udp_receive_result> udp_client::receive_async()
     {
         return task::run([this] {
-            endpoint ep;
             std::vector<uint8_t> b(max_udp_size);
-            auto n = socket_->receive_from(b, ep);
-            b.resize(n);
-            return udp_receive_result{b, ep};
+            auto r = socket_->receive_from_async(b).get();
+            b.resize(r.bytes);
+            return udp_receive_result{b, r.endpoint};
         });
     }
 
@@ -218,7 +217,7 @@ namespace exa
 
     std::future<size_t> udp_client::send_async(gsl::span<const uint8_t> buffer)
     {
-        return task::run([=] { return socket_->send(buffer); });
+        return socket_->send_async(buffer);
     }
 
     size_t udp_client::send(gsl::span<const uint8_t> buffer, const endpoint& ep)
@@ -228,6 +227,6 @@ namespace exa
 
     std::future<size_t> udp_client::send_async(gsl::span<const uint8_t> buffer, const endpoint& ep)
     {
-        return task::run([=] { return socket_->send_to(buffer, ep); });
+        return socket_->send_to_async(buffer, ep);
     }
 }

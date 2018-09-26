@@ -99,7 +99,7 @@ namespace exa
             throw std::invalid_argument("Can't copy to nullptr stream.");
         }
 
-        return task::run([=] { return copy_to(s); });
+        return task::run([=] { copy_to(s); });
     }
 
     std::future<void> stream::copy_to_async(std::shared_ptr<stream> s, std::streamsize buffer_size)
@@ -113,7 +113,7 @@ namespace exa
             throw std::out_of_range("Can't copy to a stream with buffer size lower than or equal to 0.");
         }
 
-        return task::run([=] { return copy_to(s, buffer_size); });
+        return task::run([=] { copy_to(s, buffer_size); });
     }
 
     std::future<void> stream::flush_async()
