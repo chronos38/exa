@@ -3,47 +3,94 @@
 #include <exa/task.hpp>
 #include <exa/enum_flag.hpp>
 
-#include <gsl/gsl>
-
-#include <functional>
-#include <cstddef>
 #include <future>
 #include <any>
+#include <tuple>
 
 namespace exa
 {
     namespace detail
     {
-        enum class io_state
-        {
-            not_ready,
-            ready,
-            abort
-        };
-
-        using callback_handle = std::function<std::any(std::any)>;
-        using state_handle = std::function<io_state()>;
-
-        struct io_task_data
-        {
-            callback_handle callback;
-            std::any argument;
-            state_handle state;
-        };
-
         class io_task
         {
         public:
-            static std::future<std::any> run(const io_task_data& data);
+            template <class Result, class Function, class = std::enable_if_t<!std::is_void_v<Result>>>
+            static std::future<Result> run(Function&& callback)
+            {
+                static_assert(std::is_invocable_v<Function>);
+
+                auto promise = std::make_shared<std::promise<Result>>();
+                auto first = std::make_shared<bool>(true);
+
+                run_internal([callback, promise, first] {
+                    if (*first)
+                    {
+                        *first = false;
+                        return false;
+                    }
+
+                    bool done = false;
+                    std::any result;
+
+                    try
+                    {
+                        std::tie(done, result) = callback();
+
+                        if (done)
+                        {
+                            promise->set_value(std::any_cast<Result>(result));
+                            return true;
+                        }
+                    }
+                    catch (...)
+                    {
+                        promise->set_exception(std::current_exception());
+                        return true;
+                    }
+
+                    return false;
+                });
+
+                return promise->get_future();
+            }
+
+            template <class Result, class Function, class = std::enable_if_t<std::is_void_v<Result>>>
+            static std::future<void> run(Function&& callback)
+            {
+                static_assert(std::is_invocable_v<Function>);
+
+                auto promise = std::make_shared<std::promise<void>>();
+                auto first = std::make_unique<bool>(true);
+
+                run_internal([callback, promise, first = std::move(first)] {
+                    if (*first)
+                    {
+                        *first = false;
+                        return false;
+                    }
+
+                    try
+                    {
+                        if (callback())
+                        {
+                            promise->set_value();
+                            return true;
+                        }
+                    }
+                    catch (...)
+                    {
+                        promise->set_exception(std::current_exception());
+                        return true;
+                    }
+
+                    return false;
+                });
+
+                return promise->get_future();
+            }
 
         private:
-            struct async_result
-            {
-                bool done = false;
-                std::any result;
-            };
-
-            static void run_async(std::function<bool()> cb);
+            static void run_internal(std::function<bool()> callback);
         };
     }
 }

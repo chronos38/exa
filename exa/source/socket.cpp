@@ -6,6 +6,7 @@
 #include <algorithm>
 
 using namespace exa::detail;
+using namespace std::chrono_literals;
 
 namespace exa
 {
@@ -414,7 +415,11 @@ namespace exa
     std::future<std::shared_ptr<socket>> socket::accept_async() const
     {
         validate_native_handle(socket_);
-        return task::run(std::bind(&socket::accept, this));
+
+        return detail::io_task::run<std::shared_ptr<socket>>([this] {
+            return poll(0us, select_mode::read) ? std::make_tuple(true, accept())
+                                                : std::make_tuple(false, std::shared_ptr<socket>());
+        });
     }
 
     void socket::bind(const address& addr, uint16_t port)
@@ -605,7 +610,10 @@ namespace exa
     std::future<size_t> socket::receive_async(gsl::span<uint8_t> buffer, socket_flags flags) const
     {
         validate_native_handle(socket_);
-        return task::run([=] { return receive(buffer, flags); });
+        return detail::io_task::run<size_t>([=] {
+            return poll(0us, select_mode::read) ? std::make_tuple(true, receive(buffer, flags))
+                                                : std::make_tuple(false, static_cast<size_t>(0));
+        });
     }
 
     size_t socket::receive_from(gsl::span<uint8_t> buffer, endpoint& ep, socket_flags flags) const
@@ -634,10 +642,21 @@ namespace exa
     std::future<socket_receive_from_result> socket::receive_from_async(gsl::span<uint8_t> buffer, socket_flags flags) const
     {
         validate_native_handle(socket_);
-        return task::run([=] {
-            endpoint ep;
-            auto n = receive_from(buffer, ep, flags);
-            return socket_receive_from_result{n, ep};
+
+        return detail::io_task::run<socket_receive_from_result>([=] {
+            auto b = poll(0us, select_mode::read);
+
+            if (b)
+            {
+
+                endpoint ep;
+                auto n = receive_from(buffer, ep, flags);
+                return std::make_tuple(true, socket_receive_from_result{n, ep});
+            }
+            else
+            {
+                return std::make_tuple(false, socket_receive_from_result());
+            }
         });
     }
 
@@ -659,7 +678,10 @@ namespace exa
     std::future<size_t> socket::send_async(gsl::span<const uint8_t> buffer, socket_flags flags) const
     {
         validate_native_handle(socket_);
-        return task::run([=] { return send(buffer, flags); });
+        return detail::io_task::run<size_t>([=] {
+            return poll(0us, select_mode::write) ? std::make_tuple(true, send(buffer, flags))
+                                                 : std::make_tuple(false, static_cast<size_t>(0));
+        });
     }
 
     size_t socket::send_to(gsl::span<const uint8_t> buffer, const endpoint& ep, socket_flags flags) const
@@ -682,7 +704,10 @@ namespace exa
     std::future<size_t> socket::send_to_async(gsl::span<const uint8_t> buffer, const endpoint& ep, socket_flags flags) const
     {
         validate_native_handle(socket_);
-        return task::run([=] { return send_to(buffer, ep, flags); });
+        return detail::io_task::run<size_t>([=] {
+            return poll(0us, select_mode::write) ? std::make_tuple(true, send_to(buffer, ep, flags))
+                                                 : std::make_tuple(false, static_cast<size_t>(0));
+        });
     }
 
     void socket::shutdown(socket_shutdown flags) const

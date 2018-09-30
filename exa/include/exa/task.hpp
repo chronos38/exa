@@ -90,6 +90,7 @@ namespace exa
         static void push(TaskCallback&& cb)
         {
             lock(instance.task_queue_, [&] { instance.task_queue_.push_back(cb); });
+            instance.task_signal_.notify_one();
         }
 
         static task instance;

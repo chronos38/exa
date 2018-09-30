@@ -20,7 +20,7 @@ namespace exa
 
     struct socket_receive_from_result
     {
-        size_t bytes;
+        size_t bytes = 0;
         endpoint endpoint;
     };
 
