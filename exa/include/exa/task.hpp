@@ -66,9 +66,9 @@ namespace exa
             return p->get_future();
         }
 
-        static void initialize(std::size_t thread_count);
+        static void initialize(std::size_t thread_count = std::thread::hardware_concurrency() * 2);
 
-        static void deinitialize(const std::chrono::milliseconds& timeout = std::chrono::milliseconds(100));
+        static void deinitialize(const std::chrono::milliseconds& timeout = std::chrono::milliseconds(0));
 
         static size_t available_tasks();
 
