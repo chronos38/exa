@@ -142,6 +142,14 @@ namespace exa
         {
             throw std::runtime_error("Invalid socket in network stream.");
         }
+        if (s == nullptr)
+        {
+            throw std::invalid_argument("Can't copy to nullptr stream.");
+        }
+        if (buffer_size <= 0)
+        {
+            throw std::out_of_range("Can't copy to a stream with buffer size lower than or equal to 0.");
+        }
 
         return detail::io_task::run<void>([=] {
             if (socket_->poll(0us, select_mode::write))
@@ -167,6 +175,10 @@ namespace exa
 
     std::streamsize network_stream::read(gsl::span<uint8_t> buffer)
     {
+        if (!socket_->valid())
+        {
+            throw std::runtime_error("Invalid socket in network stream.");
+        }
         if (buffer.data() == nullptr)
         {
             throw std::invalid_argument("Read buffer is a nullptr.");
@@ -176,7 +188,7 @@ namespace exa
             throw std::runtime_error("Reading isn't supported for this network stream.");
         }
 
-        return static_cast<size_t>(socket_->receive(buffer));
+        return static_cast<std::streamsize>(socket_->receive(buffer));
     }
 
     std::future<std::streamsize> network_stream::read_async(gsl::span<uint8_t> buffer)
@@ -185,10 +197,19 @@ namespace exa
         {
             throw std::runtime_error("Invalid socket in network stream.");
         }
+        if (buffer.data() == nullptr)
+        {
+            throw std::invalid_argument("Read buffer is a nullptr.");
+        }
+        if (!readable_)
+        {
+            throw std::runtime_error("Reading isn't supported for this network stream.");
+        }
 
         return detail::io_task::run<std::streamsize>([=] {
-            return socket_->poll(0us, select_mode::read) ? std::make_tuple(true, read(buffer))
-                                                         : std::make_tuple(false, static_cast<size_t>(0));
+            return socket_->poll(0us, select_mode::read)
+                       ? std::make_tuple(true, static_cast<std::streamsize>(socket_->receive(buffer)))
+                       : std::make_tuple(false, static_cast<std::streamsize>(0));
         });
     }
 
@@ -199,6 +220,10 @@ namespace exa
 
     void network_stream::write(gsl::span<const uint8_t> buffer)
     {
+        if (!socket_->valid())
+        {
+            throw std::runtime_error("Invalid socket in network stream.");
+        }
         if (buffer.data() == nullptr)
         {
             throw std::invalid_argument("Write buffer is a nullptr.");
@@ -222,11 +247,25 @@ namespace exa
         {
             throw std::runtime_error("Invalid socket in network stream.");
         }
+        if (buffer.data() == nullptr)
+        {
+            throw std::invalid_argument("Write buffer is a nullptr.");
+        }
+        if (!writable_)
+        {
+            throw std::runtime_error("Writing isn't supported for this network stream.");
+        }
 
         return detail::io_task::run<void>([=] {
             if (socket_->poll(0us, select_mode::write))
             {
-                write(buffer);
+                auto n = socket_->send(buffer);
+
+                if (n != static_cast<size_t>(buffer.size()))
+                {
+                    throw std::runtime_error("Not all bytes were written to the network stream.");
+                }
+
                 return true;
             }
             else

@@ -646,7 +646,6 @@ namespace exa
         return detail::io_task::run<socket_receive_from_result>([=] {
             if (poll(0us, select_mode::read))
             {
-
                 endpoint ep;
                 auto n = receive_from(buffer, ep, flags);
                 return std::make_tuple(true, socket_receive_from_result{n, ep});
