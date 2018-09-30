@@ -116,7 +116,7 @@ namespace exa
         }
 
         return detail::io_task::run<std::shared_ptr<tcp_client>>([=] {
-            return socket_->poll(0us, select_mode::read)
+            return socket_->poll(1s, select_mode::read)
                        ? std::make_tuple(true, std::make_shared<tcp_client>(socket_->accept()))
                        : std::make_tuple(false, std::shared_ptr<tcp_client>());
         });

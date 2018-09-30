@@ -152,7 +152,7 @@ namespace exa
         }
 
         return detail::io_task::run<void>([=] {
-            if (socket_->poll(0us, select_mode::write))
+            if (socket_->poll(1s, select_mode::write))
             {
                 stream::copy_to(s, buffer_size);
                 return true;
@@ -207,7 +207,7 @@ namespace exa
         }
 
         return detail::io_task::run<std::streamsize>([=] {
-            return socket_->poll(0us, select_mode::read)
+            return socket_->poll(1s, select_mode::read)
                        ? std::make_tuple(true, static_cast<std::streamsize>(socket_->receive(buffer)))
                        : std::make_tuple(false, static_cast<std::streamsize>(0));
         });
@@ -257,7 +257,7 @@ namespace exa
         }
 
         return detail::io_task::run<void>([=] {
-            if (socket_->poll(0us, select_mode::write))
+            if (socket_->poll(1s, select_mode::write))
             {
                 auto n = socket_->send(buffer);
 
