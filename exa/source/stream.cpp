@@ -4,7 +4,7 @@
 #include <functional>
 #include <vector>
 
-using namespace std::literals::chrono_literals;
+using namespace std::chrono_literals;
 
 namespace exa
 {
