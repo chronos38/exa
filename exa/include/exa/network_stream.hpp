@@ -51,7 +51,9 @@ namespace exa
 
         virtual void close() override;
 
-        virtual std::future<void> copy_to_async(std::shared_ptr<stream> s, std::streamsize buffer_size = 81920) override;
+        virtual std::future<void> copy_to_async(std::shared_ptr<stream> s) override;
+
+        virtual std::future<void> copy_to_async(std::shared_ptr<stream> s, std::streamsize buffer_size) override;
 
         virtual void flush() override;
 

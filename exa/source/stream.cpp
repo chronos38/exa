@@ -44,7 +44,7 @@ namespace exa
             throw std::invalid_argument("Can't copy to nullptr stream.");
         }
 
-        auto buffer_size = default_buffer_size;
+        auto buffer_size = default_copy_buffer_size;
 
         if (can_seek())
         {

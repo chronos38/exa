@@ -21,7 +21,7 @@ namespace exa
     class stream
     {
     public:
-        static constexpr std::streamsize default_buffer_size = 0x10000;
+        static constexpr std::streamsize default_copy_buffer_size = 0x10000;
 
         virtual ~stream() = default;
 

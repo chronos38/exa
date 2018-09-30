@@ -644,9 +644,7 @@ namespace exa
         validate_native_handle(socket_);
 
         return detail::io_task::run<socket_receive_from_result>([=] {
-            auto b = poll(0us, select_mode::read);
-
-            if (b)
+            if (poll(0us, select_mode::read))
             {
 
                 endpoint ep;

@@ -60,9 +60,9 @@ namespace exa
                 static_assert(std::is_invocable_v<Function>);
 
                 auto promise = std::make_shared<std::promise<void>>();
-                auto first = std::make_unique<bool>(true);
+                auto first = std::make_shared<bool>(true);
 
-                run_internal([callback, promise, first = std::move(first)] {
+                run_internal([callback, promise, first] {
                     if (*first)
                     {
                         *first = false;

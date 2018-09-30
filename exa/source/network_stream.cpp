@@ -1,6 +1,7 @@
 #include <exa/network_stream.hpp>
 #include <exa/enum_flag.hpp>
 #include <exa/task.hpp>
+#include <exa/detail/io_task.hpp>
 
 #include <limits>
 
@@ -130,6 +131,11 @@ namespace exa
         socket_->close();
     }
 
+    std::future<void> network_stream::copy_to_async(std::shared_ptr<stream> s)
+    {
+        return copy_to_async(s, default_copy_buffer_size);
+    }
+
     std::future<void> network_stream::copy_to_async(std::shared_ptr<stream> s, std::streamsize buffer_size)
     {
         if (!socket_->valid())
@@ -137,7 +143,17 @@ namespace exa
             throw std::runtime_error("Invalid socket in network stream.");
         }
 
-        return stream::copy_to_async(s, buffer_size);
+        return detail::io_task::run<void>([=] {
+            if (socket_->poll(0us, select_mode::write))
+            {
+                stream::copy_to(s, buffer_size);
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        });
     }
 
     void network_stream::flush()
@@ -170,7 +186,10 @@ namespace exa
             throw std::runtime_error("Invalid socket in network stream.");
         }
 
-        return stream::read_async(buffer);
+        return detail::io_task::run<std::streamsize>([=] {
+            return socket_->poll(0us, select_mode::read) ? std::make_tuple(true, read(buffer))
+                                                         : std::make_tuple(false, static_cast<size_t>(0));
+        });
     }
 
     std::streamoff network_stream::seek(std::streamoff, seek_origin)
@@ -204,7 +223,17 @@ namespace exa
             throw std::runtime_error("Invalid socket in network stream.");
         }
 
-        return stream::write_async(buffer);
+        return detail::io_task::run<void>([=] {
+            if (socket_->poll(0us, select_mode::write))
+            {
+                write(buffer);
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        });
     }
 
     bool network_stream::data_available() const

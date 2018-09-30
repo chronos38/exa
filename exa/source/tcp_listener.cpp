@@ -1,5 +1,6 @@
 #include <exa/tcp_listener.hpp>
 #include <exa/task.hpp>
+#include <exa/detail/io_task.hpp>
 
 #include <chrono>
 
@@ -114,7 +115,11 @@ namespace exa
             throw std::runtime_error("TCP listener isn't actively listening.");
         }
 
-        return task::run(std::bind(&tcp_listener::accept_client, this));
+        return detail::io_task::run<std::shared_ptr<tcp_client>>([=] {
+            return socket_->poll(0us, select_mode::read)
+                       ? std::make_tuple(true, std::make_shared<tcp_client>(socket_->accept()))
+                       : std::make_tuple(false, std::shared_ptr<tcp_client>());
+        });
     }
 
     bool tcp_listener::pending() const
