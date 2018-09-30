@@ -13,6 +13,11 @@
 
 namespace exa
 {
+    namespace detail
+    {
+        class io_task;
+    }
+
     class task
     {
     public:
@@ -70,14 +75,22 @@ namespace exa
         static size_t total_tasks();
 
     private:
+        using task_callback = std::function<void()>;
+
+        struct task_queue : public std::deque<task_callback>, public lockable<std::mutex>
+        {
+        };
+
         task();
         ~task();
         void shutdown(const std::chrono::milliseconds& timeout);
         void work();
 
-        struct task_queue : public std::deque<std::function<void()>>, public lockable<std::mutex>
+        template <class TaskCallback>
+        static void push(TaskCallback&& cb)
         {
-        };
+            lock(instance.task_queue_, [&] { instance.task_queue_.push_back(cb); });
+        }
 
         static task instance;
         std::atomic_bool run_;
@@ -86,5 +99,7 @@ namespace exa
         std::condition_variable_any task_signal_;
         std::vector<std::thread> threads_;
         task_queue task_queue_;
+
+        friend class detail::io_task;
     };
 }

@@ -1,37 +1,43 @@
 set(INCROOT "${CMAKE_CURRENT_SOURCE_DIR}/include/exa")
 set(SRCROOT "${CMAKE_CURRENT_SOURCE_DIR}/source")
+set(DETAILROOT "${CMAKE_CURRENT_SOURCE_DIR}/internal/exa/detail")
 
 set(
     SOURCES
+    # public interface files
     ${INCROOT}/address.hpp
-    ${SRCROOT}/address.cpp
     ${INCROOT}/buffered_stream.hpp
-    ${SRCROOT}/buffered_stream.cpp
-    ${INCROOT}/concepts.hpp
     ${INCROOT}/dependencies.hpp
+    ${INCROOT}/concepts.hpp
     ${INCROOT}/endpoint.hpp
-    ${SRCROOT}/endpoint.cpp
     ${INCROOT}/enum_flag.hpp
     ${INCROOT}/file_stream.hpp
-    ${SRCROOT}/file_stream.unix.cpp
-    ${SRCROOT}/file_stream.win32.cpp
     ${INCROOT}/memory_stream.hpp
-    ${SRCROOT}/memory_stream.cpp
     ${INCROOT}/network_stream.hpp
-    ${SRCROOT}/network_stream.cpp
     ${INCROOT}/socket_base.hpp
     ${INCROOT}/socket.hpp
-    ${SRCROOT}/socket.cpp
     ${INCROOT}/stream.hpp
-    ${SRCROOT}/stream.cpp
     ${INCROOT}/task.hpp
-    ${SRCROOT}/task.cpp
     ${INCROOT}/tcp_client.hpp
-    ${SRCROOT}/tcp_client.cpp
     ${INCROOT}/tcp_listener.hpp
-    ${SRCROOT}/tcp_listener.cpp
     ${INCROOT}/udp_client.hpp
+    # private interface files
+    ${DETAILROOT}/io_task.hpp
+    # source files
+    ${SRCROOT}/address.cpp
+    ${SRCROOT}/buffered_stream.cpp
+    ${SRCROOT}/endpoint.cpp
+    ${SRCROOT}/file_stream.unix.cpp
+    ${SRCROOT}/file_stream.win32.cpp
+    ${SRCROOT}/memory_stream.cpp
+    ${SRCROOT}/network_stream.cpp
+    ${SRCROOT}/socket.cpp
+    ${SRCROOT}/stream.cpp
+    ${SRCROOT}/task.cpp
+    ${SRCROOT}/tcp_client.cpp
+    ${SRCROOT}/tcp_listener.cpp
     ${SRCROOT}/udp_client.cpp
+    ${SRCROOT}/io_task.cpp
 )
 
 find_package(Threads REQUIRED)
@@ -41,5 +47,6 @@ add_library(${PROJECT_NAME} STATIC ${SOURCES})
 
 target_include_directories(
     ${PROJECT_NAME}
-    PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include"
+    PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include"
+    PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/internal"
 )
