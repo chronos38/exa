@@ -6,23 +6,21 @@ namespace exa
 {
     namespace detail
     {
-        std::future<size_t> io_task::run(const io_task_data& data)
+        std::future<std::any> io_task::run(const io_task_data& data)
         {
             auto operation = [](const io_task_data& data) {
                 switch (data.state())
                 {
                     case io_state::abort:
-                        return async_result{true, 0};
-                    case io_state::read:
-                    case io_state::write:
-                    case io_state::read_write:
-                        return async_result{true, HandleReadWrite(data)};
+                        return async_result{true, std::any()};
+                    case io_state::ready:
+                        return async_result{true, data.callback(data.argument)};
                     default:
-                        return async_result{false, 0};
+                        return async_result{false, std::any()};
                 }
             };
 
-            auto promise = std::make_shared<std::promise<size_t>>();
+            auto promise = std::make_shared<std::promise<std::any>>();
 
             run_async([data, operation, promise] {
                 try
@@ -31,11 +29,10 @@ namespace exa
 
                     if (r.done)
                     {
-                        promise->set_value(r.bytes);
-                        return true;
+                        promise->set_value(r.result);
                     }
 
-                    return false;
+                    return r.done;
                 }
                 catch (...)
                 {
@@ -45,28 +42,6 @@ namespace exa
             });
 
             return promise->get_future();
-        }
-
-        size_t io_task::HandleReadWrite(const io_task_data& io)
-        {
-            return std::visit(
-                [&](auto&& data) {
-                    using T = std::decay_t<decltype(data)>;
-
-                    if constexpr (std::is_same_v<T, read_command>)
-                    {
-                        return data.handle(data.buffer);
-                    }
-                    else if constexpr (std::is_same_v<T, write_command>)
-                    {
-                        return data.handle(data.buffer);
-                    }
-                    else
-                    {
-                        return 0;
-                    }
-                },
-                io.data);
         }
 
         void io_task::run_async(std::function<bool()> cb)

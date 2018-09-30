@@ -1,8 +1,11 @@
 #include <exa/socket.hpp>
 #include <exa/enum_flag.hpp>
 #include <exa/task.hpp>
+#include <exa/detail/io_task.hpp>
 
 #include <algorithm>
+
+using namespace exa::detail;
 
 namespace exa
 {
