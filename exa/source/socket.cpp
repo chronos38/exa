@@ -417,8 +417,8 @@ namespace exa
         validate_native_handle(socket_);
 
         return detail::io_task::run<std::shared_ptr<socket>>([this] {
-            return poll(1s, select_mode::read) ? std::make_tuple(true, accept())
-                                               : std::make_tuple(false, std::shared_ptr<socket>());
+            return poll(0us, select_mode::read) ? std::make_tuple(true, accept())
+                                                : std::make_tuple(false, std::shared_ptr<socket>());
         });
     }
 
@@ -611,8 +611,8 @@ namespace exa
     {
         validate_native_handle(socket_);
         return detail::io_task::run<size_t>([=] {
-            return poll(1s, select_mode::read) ? std::make_tuple(true, receive(buffer, flags))
-                                               : std::make_tuple(false, static_cast<size_t>(0));
+            return poll(0us, select_mode::read) ? std::make_tuple(true, receive(buffer, flags))
+                                                : std::make_tuple(false, static_cast<size_t>(0));
         });
     }
 
@@ -644,7 +644,7 @@ namespace exa
         validate_native_handle(socket_);
 
         return detail::io_task::run<socket_receive_from_result>([=] {
-            if (poll(1s, select_mode::read))
+            if (poll(0us, select_mode::read))
             {
                 endpoint ep;
                 auto n = receive_from(buffer, ep, flags);
@@ -676,8 +676,8 @@ namespace exa
     {
         validate_native_handle(socket_);
         return detail::io_task::run<size_t>([=] {
-            return poll(1s, select_mode::write) ? std::make_tuple(true, send(buffer, flags))
-                                                : std::make_tuple(false, static_cast<size_t>(0));
+            return poll(0us, select_mode::write) ? std::make_tuple(true, send(buffer, flags))
+                                                 : std::make_tuple(false, static_cast<size_t>(0));
         });
     }
 
