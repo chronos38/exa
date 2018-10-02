@@ -53,15 +53,8 @@ namespace exa
                 static_assert(std::is_invocable_v<Function>);
 
                 auto promise = std::make_shared<std::promise<void>>();
-                auto first = std::make_shared<bool>(true);
 
-                run_internal([callback, promise, first] {
-                    if (*first)
-                    {
-                        *first = false;
-                        return false;
-                    }
-
+                task::push(std::bind(&io_task::run_internal, [callback, promise] {
                     try
                     {
                         if (callback())
@@ -77,7 +70,7 @@ namespace exa
                     }
 
                     return false;
-                });
+                }));
 
                 return promise->get_future();
             }
