@@ -30,7 +30,7 @@ if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
 endif()
 
 if(EXA_USE_VCPKG)
-    include_directories("$ENV{VCPKG_DIR}/installed/${VCPKG_TARGET_TRIPLET}/include")
+    include_directories("$ENV{VCPKG_ROOT}/installed/${VCPKG_TARGET_TRIPLET}/include")
 endif()
 
 add_subdirectory(exa)
