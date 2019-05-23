@@ -40,6 +40,7 @@ set(
     ${SRCROOT}/io_task.cpp
 )
 
+find_package(Cpp-Taskflow CONFIG REQUIRED)
 find_package(Threads REQUIRED)
 find_package(gsl)
 
