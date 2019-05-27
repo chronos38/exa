@@ -15,10 +15,7 @@ set(
     ${SRCROOT}/udp_client_test.cpp
 )
 
-find_package(Cpp-Taskflow CONFIG REQUIRED)
-find_package(Threads REQUIRED)
 find_package(GTest REQUIRED)
-find_package(gsl)
 
 enable_testing()
 
@@ -32,7 +29,7 @@ target_include_directories(
 
 target_link_libraries(
     ${PROJECT_NAME}_test
-    PUBLIC ${PROJECT_NAME}
+    PRIVATE ${PROJECT_NAME}
 	PRIVATE Cpp-Taskflow::Cpp-Taskflow
     PRIVATE GTest::GTest
     PRIVATE GTest::Main

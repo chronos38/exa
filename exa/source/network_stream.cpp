@@ -1,7 +1,6 @@
 #include <exa/network_stream.hpp>
 #include <exa/enum_flag.hpp>
 #include <exa/task.hpp>
-#include <exa/detail/io_task.hpp>
 
 #include <limits>
 
@@ -9,13 +8,13 @@ using namespace std::chrono_literals;
 
 namespace exa
 {
-    network_stream::network_stream(const std::shared_ptr<exa::socket>& socket, bool owns)
+    network_stream::network_stream(exa::socket* socket, bool owns)
         : network_stream(socket, file_access::read_write, owns)
     {
     }
 
-    network_stream::network_stream(const std::shared_ptr<exa::socket>& s, file_access access, bool owns)
-        : socket_(s), owns_(owns)
+    network_stream::network_stream(exa::socket* s, file_access access, bool owns)
+        : socket_(s)
     {
         if (s == nullptr)
         {
@@ -36,14 +35,7 @@ namespace exa
 
         readable_ = has_flag(access, file_access::read);
         writable_ = has_flag(access, file_access::write);
-    }
-
-    network_stream::~network_stream()
-    {
-        if (owns_)
-        {
-            close();
-        }
+        socket_.get_deleter().owns = owns;
     }
 
     bool network_stream::can_read() const
@@ -131,12 +123,12 @@ namespace exa
         socket_->close();
     }
 
-    std::future<void> network_stream::copy_to_async(std::shared_ptr<stream> s)
+    std::future<void> network_stream::copy_to_async(stream* s)
     {
         return copy_to_async(s, default_copy_buffer_size);
     }
 
-    std::future<void> network_stream::copy_to_async(std::shared_ptr<stream> s, std::streamsize buffer_size)
+    std::future<void> network_stream::copy_to_async(stream* s, std::streamsize buffer_size)
     {
         if (!socket_->valid())
         {
@@ -151,17 +143,7 @@ namespace exa
             throw std::out_of_range("Can't copy to a stream with buffer size lower than or equal to 0.");
         }
 
-        return detail::io_task::run<void>([=] {
-            if (socket_->poll(0us, select_mode::write))
-            {
-                stream::copy_to(s, buffer_size);
-                return true;
-            }
-            else
-            {
-                return false;
-            }
-        });
+        return task::run([=] { stream::copy_to(s, buffer_size); });
     }
 
     void network_stream::flush()
@@ -206,11 +188,7 @@ namespace exa
             throw std::runtime_error("Reading isn't supported for this network stream.");
         }
 
-        return detail::io_task::run<std::streamsize>([=] {
-            return socket_->poll(0us, select_mode::read)
-                       ? std::make_tuple(true, static_cast<std::streamsize>(socket_->receive(buffer)))
-                       : std::make_tuple(false, static_cast<std::streamsize>(0));
-        });
+        return task::run([=] { return static_cast<std::streamsize>(socket_->receive(buffer)); });
     }
 
     std::streamoff network_stream::seek(std::streamoff, seek_origin)
@@ -256,7 +234,7 @@ namespace exa
             throw std::runtime_error("Writing isn't supported for this network stream.");
         }
 
-        return detail::io_task::run<void>([=] {
+        return task::run([=] {
             if (socket_->poll(0us, select_mode::write))
             {
                 auto n = socket_->send(buffer);
@@ -265,12 +243,6 @@ namespace exa
                 {
                     throw std::runtime_error("Not all bytes were written to the network stream.");
                 }
-
-                return true;
-            }
-            else
-            {
-                return false;
             }
         });
     }
@@ -280,8 +252,16 @@ namespace exa
         return socket_->available() > 0;
     }
 
-    const std::shared_ptr<socket>& network_stream::socket() const
+    socket* network_stream::socket() const
     {
-        return socket_;
+        return socket_.get();
+    }
+
+    void network_stream::network_stream_deleter::operator()(exa::socket* s) const noexcept
+    { 
+        if (owns)
+        {
+            delete s;
+        }
     }
 }

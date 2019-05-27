@@ -27,7 +27,7 @@ namespace exa
         udp_client(uint16_t port, address_family family);
         explicit udp_client(const endpoint& local_ep);
         udp_client(const std::string& host, uint16_t port);
-        virtual ~udp_client() = default;
+        ~udp_client() = default;
 
         bool connected() const;
         size_t available() const;

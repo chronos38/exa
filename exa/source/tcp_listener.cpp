@@ -1,6 +1,5 @@
 #include <exa/tcp_listener.hpp>
 #include <exa/task.hpp>
-#include <exa/detail/io_task.hpp>
 
 #include <chrono>
 
@@ -18,7 +17,7 @@ namespace exa
 
     tcp_listener::tcp_listener(const endpoint& ep) : endpoint_(ep)
     {
-        socket_ = std::make_shared<exa::socket>(ep.family(), socket_type::stream, protocol_type::tcp);
+        socket_ = std::make_unique<exa::socket>(ep.family(), socket_type::stream, protocol_type::tcp);
     }
 
     tcp_listener::~tcp_listener()
@@ -73,12 +72,12 @@ namespace exa
         }
     }
 
-    const std::shared_ptr<socket>& tcp_listener::socket() const
+    const std::unique_ptr<socket>& tcp_listener::socket() const
     {
         return socket_;
     }
 
-    std::shared_ptr<exa::socket> tcp_listener::accept_socket() const
+    std::unique_ptr<exa::socket> tcp_listener::accept_socket() const
     {
         if (!active_)
         {
@@ -88,7 +87,7 @@ namespace exa
         return socket_->accept();
     }
 
-    std::future<std::shared_ptr<exa::socket>> tcp_listener::accept_socket_async() const
+    std::future<std::unique_ptr<exa::socket>> tcp_listener::accept_socket_async() const
     {
         if (!active_)
         {
@@ -98,28 +97,24 @@ namespace exa
         return socket_->accept_async();
     }
 
-    std::shared_ptr<tcp_client> tcp_listener::accept_client() const
+    std::unique_ptr<tcp_client> tcp_listener::accept_client() const
     {
         if (!active_)
         {
             throw std::runtime_error("TCP listener isn't actively listening.");
         }
 
-        return std::make_shared<tcp_client>(socket_->accept());
+        return std::make_unique<tcp_client>(socket_->accept());
     }
 
-    std::future<std::shared_ptr<tcp_client>> tcp_listener::accept_client_async() const
+    std::future<std::unique_ptr<tcp_client>> tcp_listener::accept_client_async() const
     {
         if (!active_)
         {
             throw std::runtime_error("TCP listener isn't actively listening.");
         }
 
-        return detail::io_task::run<std::shared_ptr<tcp_client>>([=] {
-            return socket_->poll(0us, select_mode::read)
-                       ? std::make_tuple(true, std::make_shared<tcp_client>(socket_->accept()))
-                       : std::make_tuple(false, std::shared_ptr<tcp_client>());
-        });
+        return task::run([=] { return std::make_unique<tcp_client>(socket_->accept()); });
     }
 
     bool tcp_listener::pending() const
@@ -161,20 +156,21 @@ namespace exa
     void tcp_listener::stop()
     {
         socket_->close();
-        socket_ = std::make_shared<exa::socket>(endpoint_.family(), socket_type::stream, protocol_type::tcp);
+        socket_ = std::make_unique<exa::socket>(endpoint_.family(), socket_type::stream, protocol_type::tcp);
         active_ = false;
     }
-    std::shared_ptr<tcp_listener> tcp_listener::create(uint16_t port)
+
+    std::unique_ptr<tcp_listener> tcp_listener::create(uint16_t port)
     {
         if (socket::ipv6_supported())
         {
-            auto l = std::make_shared<tcp_listener>(address::ipv6_any, port);
+            auto l = std::make_unique<tcp_listener>(address::ipv6_any, port);
             l->socket()->dual_mode(true);
             return l;
         }
         else
         {
-            return std::make_shared<tcp_listener>(address::any, port);
+            return std::make_unique<tcp_listener>(address::any, port);
         }
     }
 }

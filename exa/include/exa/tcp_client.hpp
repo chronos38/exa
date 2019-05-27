@@ -21,8 +21,8 @@ namespace exa
         explicit tcp_client(const endpoint& local_ep);
         tcp_client(const address& addr, uint16_t port);
         tcp_client(const std::string& host, uint16_t port);
-        explicit tcp_client(const std::shared_ptr<exa::socket>& s);
-        virtual ~tcp_client() = default;
+        explicit tcp_client(std::unique_ptr<exa::socket>&& s);
+        ~tcp_client() = default;
 
         bool connected() const;
         size_t available() const;
@@ -42,7 +42,7 @@ namespace exa
         void send_timeout(const std::chrono::milliseconds& value);
         std::chrono::milliseconds receive_timeout() const;
         void receive_timeout(const std::chrono::milliseconds& value);
-        const std::shared_ptr<socket>& socket() const;
+        socket* socket() const;
 
         void close();
         void connect(const endpoint& remote_ep);
@@ -53,10 +53,10 @@ namespace exa
         std::future<void> connect_async(const std::string& host, uint16_t port);
         void connect(gsl::span<const endpoint> endpoints);
         std::future<void> connect_async(gsl::span<const endpoint> endpoints);
-        const std::shared_ptr<network_stream>& stream();
+        network_stream* stream();
 
     private:
-        std::shared_ptr<exa::socket> socket_;
-        std::shared_ptr<exa::network_stream> stream_;
+        std::unique_ptr<exa::socket> socket_;
+        std::unique_ptr<exa::network_stream> stream_;
     };
 }

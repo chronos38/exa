@@ -1,7 +1,6 @@
 #include <exa/socket.hpp>
 #include <exa/enum_flag.hpp>
 #include <exa/task.hpp>
-#include <exa/detail/io_task.hpp>
 
 #include <algorithm>
 
@@ -392,7 +391,7 @@ namespace exa
 #endif
     }
 
-    std::shared_ptr<socket> socket::accept() const
+    std::unique_ptr<socket> socket::accept() const
     {
         validate_native_handle(socket_);
 
@@ -409,17 +408,14 @@ namespace exa
             throw_error("accept");
         }
 
-        return std::make_shared<socket>(s, static_cast<address_family>(storage.ss_family), protocol_type::tcp);
+        return std::make_unique<socket>(s, static_cast<address_family>(storage.ss_family), protocol_type::tcp);
     }
 
-    std::future<std::shared_ptr<socket>> socket::accept_async() const
+    std::future<std::unique_ptr<socket>> socket::accept_async() const
     {
         validate_native_handle(socket_);
 
-        return detail::io_task::run<std::shared_ptr<socket>>([this] {
-            return poll(0us, select_mode::read) ? std::make_tuple(true, accept())
-                                                : std::make_tuple(false, std::shared_ptr<socket>());
-        });
+        return task::run([this] { return accept(); });
     }
 
     void socket::bind(const address& addr, uint16_t port)
@@ -610,10 +606,7 @@ namespace exa
     std::future<size_t> socket::receive_async(gsl::span<uint8_t> buffer, socket_flags flags) const
     {
         validate_native_handle(socket_);
-        return detail::io_task::run<size_t>([=] {
-            return poll(0us, select_mode::read) ? std::make_tuple(true, receive(buffer, flags))
-                                                : std::make_tuple(false, static_cast<size_t>(0));
-        });
+        return task::run([=] { return receive(buffer, flags); });
     }
 
     size_t socket::receive_from(gsl::span<uint8_t> buffer, endpoint& ep, socket_flags flags) const
@@ -643,17 +636,10 @@ namespace exa
     {
         validate_native_handle(socket_);
 
-        return detail::io_task::run<socket_receive_from_result>([=] {
-            if (poll(0us, select_mode::read))
-            {
-                endpoint ep;
-                auto n = receive_from(buffer, ep, flags);
-                return std::make_tuple(true, socket_receive_from_result{n, ep});
-            }
-            else
-            {
-                return std::make_tuple(false, socket_receive_from_result());
-            }
+        return task::run([=] {
+            endpoint ep;
+            auto n = receive_from(buffer, ep, flags);
+            return socket_receive_from_result{n, ep};
         });
     }
 
@@ -675,10 +661,7 @@ namespace exa
     std::future<size_t> socket::send_async(gsl::span<const uint8_t> buffer, socket_flags flags) const
     {
         validate_native_handle(socket_);
-        return detail::io_task::run<size_t>([=] {
-            return poll(0us, select_mode::write) ? std::make_tuple(true, send(buffer, flags))
-                                                 : std::make_tuple(false, static_cast<size_t>(0));
-        });
+        return task::run([=] { return send(buffer, flags); });
     }
 
     size_t socket::send_to(gsl::span<const uint8_t> buffer, const endpoint& ep, socket_flags flags) const
@@ -701,10 +684,7 @@ namespace exa
     std::future<size_t> socket::send_to_async(gsl::span<const uint8_t> buffer, const endpoint& ep, socket_flags flags) const
     {
         validate_native_handle(socket_);
-        return detail::io_task::run<size_t>([=] {
-            return poll(0us, select_mode::write) ? std::make_tuple(true, send_to(buffer, ep, flags))
-                                                 : std::make_tuple(false, static_cast<size_t>(0));
-        });
+        return task::run([=] { return send_to(buffer, ep, flags); });
     }
 
     void socket::shutdown(socket_shutdown flags) const
@@ -746,8 +726,8 @@ namespace exa
         }
     }
 
-    void socket::select(std::vector<std::shared_ptr<socket>>& read, std::vector<std::shared_ptr<socket>>& write,
-                        std::vector<std::shared_ptr<socket>>& error, const std::chrono::microseconds& us)
+    void socket::select(std::vector<socket*>& read, std::vector<socket*>& write, std::vector<socket*>& error,
+                        const std::chrono::microseconds& us)
     {
         timeval timeout;
         timeout.tv_sec =
@@ -764,7 +744,7 @@ namespace exa
 
         int nfds = -1;
 
-        auto fdset = [&nfds](std::vector<std::shared_ptr<socket>>& v, fd_set& set) {
+        auto fdset = [&nfds](std::vector<socket*>& v, fd_set& set) {
             for (auto& s : v)
             {
                 FD_SET(s->socket_, &set);
@@ -780,7 +760,7 @@ namespace exa
         auto rc = ::select(nfds + 1, &readset, &writeset, &exceptset, &timeout);
         validate_transfer(rc, "select");
 
-        auto result = [](std::vector<std::shared_ptr<socket>>& v, fd_set& set) {
+        auto result = [](std::vector<socket*>& v, fd_set& set) {
             for (auto it = std::begin(v); it != std::end(v);)
             {
                 auto& s = *it;

@@ -10,7 +10,7 @@ namespace exa
     {
     public:
         buffered_stream() = default;
-        explicit buffered_stream(const std::shared_ptr<stream>& s, std::streamsize buffer_size = 4096);
+        explicit buffered_stream(exa::stream* s, std::streamsize buffer_size = 4096);
         virtual ~buffered_stream() = default;
 
         // Inherited via stream
@@ -37,7 +37,7 @@ namespace exa
         virtual void write(gsl::span<const uint8_t> buffer) override;
 
         // Specific to buffered_stream
-        std::shared_ptr<stream> underlying_stream() const;
+        stream* underlying_stream() const;
 
         std::streamsize buffer_size() const;
 
@@ -52,8 +52,8 @@ namespace exa
 
         void clear_read_buffer();
 
-        std::shared_ptr<stream> stream_;
-        const std::streamsize buffer_size_ = 0;
+        stream* stream_ = nullptr;
+        std::streamsize buffer_size_ = 0;
         std::vector<uint8_t> buffer_;
         std::streamsize read_size_ = 0;
         std::streamoff read_pos_ = 0;

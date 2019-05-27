@@ -4,8 +4,7 @@
 
 namespace exa
 {
-    buffered_stream::buffered_stream(const std::shared_ptr<stream>& s, std::streamsize buffer_size)
-        : stream_(s), buffer_size_(buffer_size)
+    buffered_stream::buffered_stream(stream* s, std::streamsize buffer_size) : stream_(s), buffer_size_(buffer_size)
     {
         if (s == nullptr)
         {
@@ -208,7 +207,7 @@ namespace exa
         }
     }
 
-    std::shared_ptr<stream> buffered_stream::underlying_stream() const
+    stream* buffered_stream::underlying_stream() const
     {
         return stream_;
     }

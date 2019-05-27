@@ -33,6 +33,9 @@ if(EXA_USE_VCPKG)
     include_directories("$ENV{VCPKG_ROOT}/installed/${VCPKG_TARGET_TRIPLET}/include")
 endif()
 
+find_package(Cpp-Taskflow CONFIG REQUIRED)
+find_package(Threads REQUIRED)
+
 add_subdirectory(exa)
 
 if(EXA_BUILD_TESTS)

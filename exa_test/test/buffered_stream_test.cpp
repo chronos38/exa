@@ -9,9 +9,9 @@ using namespace std::chrono_literals;
 
 namespace
 {
-    auto create_stream(std::shared_ptr<stream> s = std::make_shared<memory_stream>(), std::streamsize bs = 4096)
+    auto create_stream(std::unique_ptr<stream>&& s = std::make_unique<memory_stream>(), std::streamsize bs = 4096)
     {
-        return std::make_shared<buffered_stream>(s, bs);
+        return std::make_unique<buffered_stream>(s.release(), bs);
     }
 
     auto create_data(size_t size = 1000)
@@ -182,8 +182,7 @@ namespace
 TEST(buffered_stream_test, concurrent_operations_are_serialized)
 {
     auto v = create_data();
-    auto inner = std::make_shared<concurrent_stream>();
-    auto s = create_stream(inner, 1);
+    auto s = create_stream(std::make_unique<concurrent_stream>(), 1);
 
     std::array<std::future<void>, 4> tasks;
 
@@ -208,7 +207,7 @@ TEST(buffered_stream_test, concurrent_operations_are_serialized)
 
 TEST(buffered_stream_test, underlying_stream_throws_exception)
 {
-    auto s = create_stream(std::make_shared<throw_stream>());
+    auto s = create_stream(std::make_unique<throw_stream>());
     std::vector<uint8_t> v1(1);
     std::vector<uint8_t> v2(10000);
 
@@ -224,7 +223,7 @@ TEST(buffered_stream_test, copy_to_requires_flushing_of_writes)
     {
         auto s = create_stream();
         auto v = create_data();
-        auto d = std::make_shared<memory_stream>();
+        auto d = std::make_unique<memory_stream>();
 
         s->write(v);
         s->position(0);
@@ -235,11 +234,11 @@ TEST(buffered_stream_test, copy_to_requires_flushing_of_writes)
 
         if (async)
         {
-            s->copy_to_async(d).get();
+            s->copy_to_async(d.get()).get();
         }
         else
         {
-            s->copy_to(d);
+            s->copy_to(d.get());
         }
 
         auto r = d->to_array();
@@ -254,23 +253,23 @@ TEST(buffered_stream_test, copy_to_read_before_copy_copies_all_data)
     for (auto input : data)
     {
         auto v = create_data();
-        auto ts = std::make_shared<test_stream>();
+        auto ts = std::make_unique<test_stream>();
 
         ts->write(v);
         ts->position(0);
         ts->seekable = input.first;
 
-        auto src = create_stream(ts, 100);
+        auto src = create_stream(move(ts), 100);
         src->read_byte();
-        auto dst = std::make_shared<memory_stream>();
+        auto dst = std::make_unique<memory_stream>();
 
         if (input.second)
         {
-            src->copy_to_async(dst).get();
+            src->copy_to_async(dst.get()).get();
         }
         else
         {
-            src->copy_to(dst);
+            src->copy_to(dst.get());
         }
 
         std::vector<uint8_t> expected(v.size() - 1);
@@ -291,8 +290,8 @@ TEST(buffered_stream_test, should_not_flush_underyling_stream_if_readonly)
         underlying->seekable = can_seek;
         underlying->writable = false;
 
-        auto tracker = std::make_shared<tracking_stream>(underlying);
-        auto s = create_stream(tracker);
+        auto s = create_stream(std::make_unique<tracking_stream>(underlying));
+        auto tracker = dynamic_cast<tracking_stream*>(s->underlying_stream());
 
         s->read_byte();
         s->flush();
@@ -316,8 +315,8 @@ TEST(buffered_stream_test, should_always_flush_underlying_stream_if_writable)
         underlying->seekable = input.second;
         underlying->writable = true;
 
-        auto tracker = std::make_shared<tracking_stream>(underlying);
-        auto s = create_stream(tracker);
+        auto s = create_stream(std::make_unique<tracking_stream>(underlying));
+        auto tracker = dynamic_cast<tracking_stream*>(s->underlying_stream());
 
         s->flush();
         ASSERT_THAT(tracker->called.flush, Eq(1));

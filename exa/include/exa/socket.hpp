@@ -76,8 +76,8 @@ namespace exa
         std::chrono::milliseconds receive_timeout() const;
         void receive_timeout(const std::chrono::milliseconds& value);
 
-        std::shared_ptr<socket> accept() const;
-        std::future<std::shared_ptr<socket>> accept_async() const;
+        std::unique_ptr<socket> accept() const;
+        std::future<std::unique_ptr<socket>> accept_async() const;
         void bind(const address& addr, uint16_t port);
         void bind(const endpoint& local_ep);
         void close();
@@ -104,8 +104,8 @@ namespace exa
                                           socket_flags flags = socket_flags::none) const;
         void shutdown(socket_shutdown flags) const;
 
-        static void select(std::vector<std::shared_ptr<socket>>& read, std::vector<std::shared_ptr<socket>>& write,
-                           std::vector<std::shared_ptr<socket>>& error, const std::chrono::microseconds& us);
+        static void select(std::vector<socket*>& read, std::vector<socket*>& write, std::vector<socket*>& error,
+                           const std::chrono::microseconds& us);
         template <class T>
         T get_socket_option(int level, int option) const
         {

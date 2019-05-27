@@ -37,7 +37,7 @@ namespace exa
     {
     }
 
-    void stream::copy_to(std::shared_ptr<stream> s)
+    void stream::copy_to(stream* s)
     {
         if (s == nullptr)
         {
@@ -69,7 +69,7 @@ namespace exa
         copy_to(s, buffer_size);
     }
 
-    void stream::copy_to(std::shared_ptr<stream> s, std::streamsize buffer_size)
+    void stream::copy_to(stream* s, std::streamsize buffer_size)
     {
         if (s == nullptr)
         {
@@ -92,7 +92,7 @@ namespace exa
         }
     }
 
-    std::future<void> stream::copy_to_async(std::shared_ptr<stream> s)
+    std::future<void> stream::copy_to_async(stream* s)
     {
         if (s == nullptr)
         {
@@ -102,7 +102,7 @@ namespace exa
         return task::run([=] { copy_to(s); });
     }
 
-    std::future<void> stream::copy_to_async(std::shared_ptr<stream> s, std::streamsize buffer_size)
+    std::future<void> stream::copy_to_async(stream* s, std::streamsize buffer_size)
     {
         if (s == nullptr)
         {

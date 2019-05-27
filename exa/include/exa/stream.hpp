@@ -51,13 +51,13 @@ namespace exa
 
         virtual void close();
 
-        virtual void copy_to(std::shared_ptr<stream> s);
+        virtual void copy_to(stream* s);
 
-        virtual void copy_to(std::shared_ptr<stream> s, std::streamsize buffer_size);
+        virtual void copy_to(stream* s, std::streamsize buffer_size);
 
-        virtual std::future<void> copy_to_async(std::shared_ptr<stream> s);
+        virtual std::future<void> copy_to_async(stream* s);
 
-        virtual std::future<void> copy_to_async(std::shared_ptr<stream> s, std::streamsize buffer_size);
+        virtual std::future<void> copy_to_async(stream* s, std::streamsize buffer_size);
 
         virtual void flush() = 0;
 

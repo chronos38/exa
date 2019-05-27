@@ -1,6 +1,5 @@
 set(INCROOT "${CMAKE_CURRENT_SOURCE_DIR}/include/exa")
 set(SRCROOT "${CMAKE_CURRENT_SOURCE_DIR}/source")
-set(DETAILROOT "${CMAKE_CURRENT_SOURCE_DIR}/internal/exa/detail")
 
 set(
     SOURCES
@@ -21,8 +20,6 @@ set(
     ${INCROOT}/tcp_client.hpp
     ${INCROOT}/tcp_listener.hpp
     ${INCROOT}/udp_client.hpp
-    # private interface files
-    ${DETAILROOT}/io_task.hpp
     # source files
     ${SRCROOT}/address.cpp
     ${SRCROOT}/buffered_stream.cpp
@@ -37,17 +34,11 @@ set(
     ${SRCROOT}/tcp_client.cpp
     ${SRCROOT}/tcp_listener.cpp
     ${SRCROOT}/udp_client.cpp
-    ${SRCROOT}/io_task.cpp
 )
-
-find_package(Cpp-Taskflow CONFIG REQUIRED)
-find_package(Threads REQUIRED)
-find_package(gsl)
 
 add_library(${PROJECT_NAME} STATIC ${SOURCES})
 
 target_include_directories(
     ${PROJECT_NAME}
     PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include"
-    PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/internal"
 )

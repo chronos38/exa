@@ -13,7 +13,7 @@ namespace exa
             throw std::invalid_argument("TCP client has to use either IPv4 or IPv6.");
         }
 
-        socket_ = std::make_shared<exa::socket>(family, socket_type::stream, protocol_type::tcp);
+        socket_ = std::make_unique<exa::socket>(family, socket_type::stream, protocol_type::tcp);
     }
 
     tcp_client::tcp_client(const endpoint& local_ep) : tcp_client(local_ep.family())
@@ -27,16 +27,16 @@ namespace exa
 
     tcp_client::tcp_client(const std::string& host, uint16_t port)
     {
-        std::shared_ptr<exa::socket> ipv6;
-        std::shared_ptr<exa::socket> ipv4;
+        std::unique_ptr<exa::socket> ipv6;
+        std::unique_ptr<exa::socket> ipv4;
 
         if (socket::ipv4_supported())
         {
-            ipv4 = std::make_shared<exa::socket>(address_family::inter_network, socket_type::stream, protocol_type::tcp);
+            ipv4 = std::make_unique<exa::socket>(address_family::inter_network, socket_type::stream, protocol_type::tcp);
         }
         if (socket::ipv6_supported())
         {
-            ipv6 = std::make_shared<exa::socket>(address_family::inter_network_v6, socket_type::stream, protocol_type::tcp);
+            ipv6 = std::make_unique<exa::socket>(address_family::inter_network_v6, socket_type::stream, protocol_type::tcp);
         }
 
         if (!ipv4 && !ipv6)
@@ -60,7 +60,7 @@ namespace exa
                             ipv6->close();
                         }
 
-                        socket_ = ipv4;
+                        socket_ = std::move(ipv4);
                     }
                     break;
                 case address_family::inter_network_v6:
@@ -73,7 +73,7 @@ namespace exa
                             ipv4->close();
                         }
 
-                        socket_ = ipv6;
+                        socket_ = std::move(ipv6);
                     }
                     break;
                 default:
@@ -92,7 +92,7 @@ namespace exa
         }
     }
 
-    tcp_client::tcp_client(const std::shared_ptr<exa::socket>& s)
+    tcp_client::tcp_client(std::unique_ptr<exa::socket>&& s)
     {
         if (s == nullptr)
         {
@@ -107,7 +107,7 @@ namespace exa
             throw std::invalid_argument("TCP client works only with TCP protocol.");
         }
 
-        socket_ = s;
+        socket_.swap(s);
     }
 
     bool tcp_client::connected() const
@@ -200,9 +200,9 @@ namespace exa
         socket_->receive_timeout(value);
     }
 
-    const std::shared_ptr<socket>& tcp_client::socket() const
+    socket* tcp_client::socket() const
     {
-        return socket_;
+        return socket_.get();
     }
 
     void tcp_client::close()
@@ -250,7 +250,7 @@ namespace exa
         return socket_->connect_async(endpoints);
     }
 
-    const std::shared_ptr<network_stream>& tcp_client::stream()
+    network_stream* tcp_client::stream()
     {
         if (!socket_->connected())
         {
@@ -258,9 +258,9 @@ namespace exa
         }
         if (stream_ == nullptr)
         {
-            stream_ = std::make_shared<network_stream>(socket_, true);
+            stream_ = std::make_unique<network_stream>(socket_.get());
         }
 
-        return stream_;
+        return stream_.get();
     }
 }

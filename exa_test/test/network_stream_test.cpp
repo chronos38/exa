@@ -14,18 +14,18 @@ TEST(network_stream_test, ctor_null_socket_throws)
 
 TEST(network_stream_test, ctor_not_stream_throws)
 {
-    auto listener = std::make_shared<exa::socket>(address_family::inter_network, socket_type::datagram, protocol_type::udp);
-    auto client = std::make_shared<exa::socket>(address_family::inter_network, socket_type::datagram, protocol_type::udp);
+    auto listener = std::make_unique<exa::socket>(address_family::inter_network, socket_type::datagram, protocol_type::udp);
+    auto client = std::make_unique<exa::socket>(address_family::inter_network, socket_type::datagram, protocol_type::udp);
 
     listener->bind(address::loopback, 0);
     client->connect_async(address::loopback, listener->local_endpoint().port()).get();
-    ASSERT_THROW(network_stream s(client), std::invalid_argument);
+    ASSERT_THROW(network_stream s(client.get()), std::invalid_argument);
 }
 
 TEST(network_stream_test, ctor_nonblocking_throws)
 {
-    auto listener = std::make_shared<exa::socket>(address_family::inter_network, socket_type::stream, protocol_type::tcp);
-    auto client = std::make_shared<exa::socket>(address_family::inter_network, socket_type::stream, protocol_type::tcp);
+    auto listener = std::make_unique<exa::socket>(address_family::inter_network, socket_type::stream, protocol_type::tcp);
+    auto client = std::make_unique<exa::socket>(address_family::inter_network, socket_type::stream, protocol_type::tcp);
 
     listener->bind(address::loopback, 0);
     listener->listen(1);
@@ -35,13 +35,13 @@ TEST(network_stream_test, ctor_nonblocking_throws)
     f.get();
 
     server->blocking(false);
-    ASSERT_THROW(network_stream s(server), std::invalid_argument);
+    ASSERT_THROW(network_stream s(server.get()), std::invalid_argument);
 }
 
 TEST(network_stream_test, ctor_socket_can_read_and_write_doesnt_own)
 {
-    auto listener = std::make_shared<exa::socket>(address_family::inter_network, socket_type::stream, protocol_type::tcp);
-    auto client = std::make_shared<exa::socket>(address_family::inter_network, socket_type::stream, protocol_type::tcp);
+    auto listener = std::make_unique<exa::socket>(address_family::inter_network, socket_type::stream, protocol_type::tcp);
+    auto client = std::make_unique<exa::socket>(address_family::inter_network, socket_type::stream, protocol_type::tcp);
 
     listener->bind(address::loopback, 0);
     listener->listen(1);
@@ -52,8 +52,8 @@ TEST(network_stream_test, ctor_socket_can_read_and_write_doesnt_own)
 
     for (int i = 0; i < 2; ++i)
     {
-        auto server_stream = std::make_unique<network_stream>(server);
-        auto client_stream = std::make_unique<network_stream>(client);
+        auto server_stream = std::make_unique<network_stream>(server.get());
+        auto client_stream = std::make_unique<network_stream>(client.get());
 
         ASSERT_TRUE(server_stream->can_write() && client_stream->can_read());
         ASSERT_TRUE(client_stream->can_write() && server_stream->can_read());
@@ -74,8 +74,8 @@ TEST(network_stream_test, ctor_socket_can_read_and_write_doesnt_own)
 
 TEST(network_stream_test, ctor_socket_file_access_bool_can_read_and_write_doesnt_own)
 {
-    auto listener = std::make_shared<exa::socket>(address_family::inter_network, socket_type::stream, protocol_type::tcp);
-    auto client = std::make_shared<exa::socket>(address_family::inter_network, socket_type::stream, protocol_type::tcp);
+    auto listener = std::make_unique<exa::socket>(address_family::inter_network, socket_type::stream, protocol_type::tcp);
+    auto client = std::make_unique<exa::socket>(address_family::inter_network, socket_type::stream, protocol_type::tcp);
 
     listener->bind(address::loopback, 0);
     listener->listen(1);
@@ -86,8 +86,8 @@ TEST(network_stream_test, ctor_socket_file_access_bool_can_read_and_write_doesnt
 
     for (int i = 0; i < 2; ++i)
     {
-        auto server_stream = std::make_unique<network_stream>(server, file_access::read_write);
-        auto client_stream = std::make_unique<network_stream>(client, file_access::read_write);
+        auto server_stream = std::make_unique<network_stream>(server.get(), file_access::read_write);
+        auto client_stream = std::make_unique<network_stream>(client.get(), file_access::read_write);
 
         ASSERT_TRUE(server_stream->can_write() && client_stream->can_read());
         ASSERT_TRUE(client_stream->can_write() && server_stream->can_read());
@@ -111,8 +111,8 @@ TEST(network_stream_test, ctor_socket_bool_can_read_and_write)
     for (auto owns_socket : {true, false})
     {
         auto listener =
-            std::make_shared<exa::socket>(address_family::inter_network, socket_type::stream, protocol_type::tcp);
-        auto client = std::make_shared<exa::socket>(address_family::inter_network, socket_type::stream, protocol_type::tcp);
+            std::make_unique<exa::socket>(address_family::inter_network, socket_type::stream, protocol_type::tcp);
+        auto client = std::make_unique<exa::socket>(address_family::inter_network, socket_type::stream, protocol_type::tcp);
 
         listener->bind(address::loopback, 0);
         listener->listen(1);
@@ -125,8 +125,10 @@ TEST(network_stream_test, ctor_socket_bool_can_read_and_write)
         {
             try
             {
-                auto server_stream = std::make_unique<network_stream>(server, owns_socket);
-                auto client_stream = std::make_unique<network_stream>(client, owns_socket);
+                auto server_stream =
+                    std::make_unique<network_stream>(owns_socket ? server.release() : server.get(), owns_socket);
+                auto client_stream =
+                    std::make_unique<network_stream>(owns_socket ? client.release() : client.get(), owns_socket);
 
                 ASSERT_TRUE(server_stream->can_write() && client_stream->can_read());
                 ASSERT_TRUE(client_stream->can_write() && server_stream->can_read());
@@ -143,9 +145,9 @@ TEST(network_stream_test, ctor_socket_bool_can_read_and_write)
                 ASSERT_THAT(server_stream->read_async(buffer).get(), Eq(1));
                 ASSERT_THAT(static_cast<char>(buffer[0]), Eq('b'));
             }
-            catch (std::runtime_error&)
+            catch (std::invalid_argument&)
             {
-                ASSERT_THAT(i, Ne(0));
+                ASSERT_THAT(i, Eq(1));
                 ASSERT_TRUE(owns_socket);
             }
         }
@@ -154,8 +156,8 @@ TEST(network_stream_test, ctor_socket_bool_can_read_and_write)
 
 TEST(network_stream_test, ctor_socket_file_access_can_read_and_write)
 {
-    auto listener = std::make_shared<exa::socket>(address_family::inter_network, socket_type::stream, protocol_type::tcp);
-    auto client = std::make_shared<exa::socket>(address_family::inter_network, socket_type::stream, protocol_type::tcp);
+    auto listener = std::make_unique<exa::socket>(address_family::inter_network, socket_type::stream, protocol_type::tcp);
+    auto client = std::make_unique<exa::socket>(address_family::inter_network, socket_type::stream, protocol_type::tcp);
 
     listener->bind(address::loopback, 0);
     listener->listen(1);
@@ -166,8 +168,8 @@ TEST(network_stream_test, ctor_socket_file_access_can_read_and_write)
 
     for (int i = 0; i < 2; ++i)
     {
-        auto server_stream = std::make_unique<network_stream>(server, file_access::write);
-        auto client_stream = std::make_unique<network_stream>(client, file_access::read);
+        auto server_stream = std::make_unique<network_stream>(server.get(), file_access::write);
+        auto client_stream = std::make_unique<network_stream>(client.get(), file_access::read);
 
         ASSERT_TRUE(server_stream->can_write() && !server_stream->can_read());
         ASSERT_TRUE(!client_stream->can_write() && client_stream->can_read());
@@ -187,8 +189,8 @@ TEST(network_stream_test, ctor_socket_file_access_can_read_and_write)
 
 TEST(network_stream_test, data_available_returns_false_or_true_appropriately)
 {
-    auto listener = std::make_shared<exa::socket>(address_family::inter_network, socket_type::stream, protocol_type::tcp);
-    auto client = std::make_shared<exa::socket>(address_family::inter_network, socket_type::stream, protocol_type::tcp);
+    auto listener = std::make_unique<exa::socket>(address_family::inter_network, socket_type::stream, protocol_type::tcp);
+    auto client = std::make_unique<exa::socket>(address_family::inter_network, socket_type::stream, protocol_type::tcp);
 
     listener->bind(address::loopback, 0);
     listener->listen(1);
@@ -197,8 +199,8 @@ TEST(network_stream_test, data_available_returns_false_or_true_appropriately)
     auto server = listener->accept_async().get();
     f.get();
 
-    auto server_stream = std::make_unique<network_stream>(server);
-    auto client_stream = std::make_unique<network_stream>(client);
+    auto server_stream = std::make_unique<network_stream>(server.get());
+    auto client_stream = std::make_unique<network_stream>(client.get());
 
     ASSERT_FALSE(server_stream->data_available() || client_stream->data_available());
     server_stream->write_async(std::vector<uint8_t>({1})).get();
@@ -221,8 +223,8 @@ TEST(network_stream_test, data_available_returns_false_or_true_appropriately)
 
 TEST(network_stream_test, close_members_throw)
 {
-    auto listener = std::make_shared<exa::socket>(address_family::inter_network, socket_type::stream, protocol_type::tcp);
-    auto client = std::make_shared<exa::socket>(address_family::inter_network, socket_type::stream, protocol_type::tcp);
+    auto listener = std::make_unique<exa::socket>(address_family::inter_network, socket_type::stream, protocol_type::tcp);
+    auto client = std::make_unique<exa::socket>(address_family::inter_network, socket_type::stream, protocol_type::tcp);
 
     listener->bind(address::loopback, 0);
     listener->listen(1);
@@ -231,7 +233,7 @@ TEST(network_stream_test, close_members_throw)
     auto server = listener->accept_async().get();
     f.get();
 
-    auto stream = std::make_unique<network_stream>(server);
+    auto stream = std::make_unique<network_stream>(server.get());
 
     for (int i = 0; i < 2; ++i)
     {
@@ -243,16 +245,16 @@ TEST(network_stream_test, close_members_throw)
     ASSERT_THROW(stream->data_available(), std::runtime_error);
     ASSERT_THROW(stream->read(buffer), std::runtime_error);
     ASSERT_THROW(stream->write(buffer), std::runtime_error);
-    ASSERT_THROW(stream->copy_to(std::make_shared<memory_stream>()), std::runtime_error);
+    ASSERT_THROW(stream->copy_to(nullptr), std::invalid_argument);
     ASSERT_THROW(stream->read_async(buffer), std::runtime_error);
     ASSERT_THROW(stream->write_async(buffer), std::runtime_error);
-    ASSERT_THROW(stream->copy_to_async(std::make_shared<memory_stream>()), std::runtime_error);
+    ASSERT_THROW(stream->copy_to_async(nullptr), std::runtime_error);
 }
 
 TEST(network_stream_test, read_write_invalid_arguments_throws)
 {
-    auto listener = std::make_shared<exa::socket>(address_family::inter_network, socket_type::stream, protocol_type::tcp);
-    auto client = std::make_shared<exa::socket>(address_family::inter_network, socket_type::stream, protocol_type::tcp);
+    auto listener = std::make_unique<exa::socket>(address_family::inter_network, socket_type::stream, protocol_type::tcp);
+    auto client = std::make_unique<exa::socket>(address_family::inter_network, socket_type::stream, protocol_type::tcp);
 
     listener->bind(address::loopback, 0);
     listener->listen(1);
@@ -261,24 +263,24 @@ TEST(network_stream_test, read_write_invalid_arguments_throws)
     auto server = listener->accept_async().get();
     f.get();
 
-    auto stream = std::make_unique<network_stream>(server);
+    auto stream = std::make_unique<network_stream>(server.get());
     gsl::span<uint8_t> buffer;
 
     ASSERT_THROW(stream->read(buffer), std::invalid_argument);
     ASSERT_THROW(stream->write(buffer), std::invalid_argument);
     ASSERT_THROW(stream->copy_to(nullptr), std::invalid_argument);
-    ASSERT_THROW(stream->copy_to(std::make_shared<memory_stream>(), 0), std::out_of_range);
-    ASSERT_THROW(stream->copy_to(std::make_shared<memory_stream>(), -1), std::out_of_range);
+    ASSERT_THROW(stream->copy_to(nullptr, 0), std::invalid_argument);
+    ASSERT_THROW(stream->copy_to(nullptr, -1), std::invalid_argument);
     ASSERT_THROW(stream->read_async(buffer), std::invalid_argument);
     ASSERT_THROW(stream->write_async(buffer), std::invalid_argument);
-    ASSERT_THROW(stream->copy_to_async(std::make_shared<memory_stream>(), 0), std::out_of_range);
-    ASSERT_THROW(stream->copy_to_async(std::make_shared<memory_stream>(), -1), std::out_of_range);
+    ASSERT_THROW(stream->copy_to_async(nullptr, 0), std::invalid_argument);
+    ASSERT_THROW(stream->copy_to_async(nullptr, -1), std::invalid_argument);
 }
 
 TEST(network_stream_test, readable_writeable_properties_roundtrip)
 {
-    auto listener = std::make_shared<exa::socket>(address_family::inter_network, socket_type::stream, protocol_type::tcp);
-    auto client = std::make_shared<exa::socket>(address_family::inter_network, socket_type::stream, protocol_type::tcp);
+    auto listener = std::make_unique<exa::socket>(address_family::inter_network, socket_type::stream, protocol_type::tcp);
+    auto client = std::make_unique<exa::socket>(address_family::inter_network, socket_type::stream, protocol_type::tcp);
 
     listener->bind(address::loopback, 0);
     listener->listen(1);
@@ -287,7 +289,7 @@ TEST(network_stream_test, readable_writeable_properties_roundtrip)
     auto server = listener->accept_async().get();
     f.get();
 
-    auto stream = std::make_unique<network_stream>(server);
+    auto stream = std::make_unique<network_stream>(server.get());
     std::vector<uint8_t> buffer(1, 1);
 
     stream->readable(false);
@@ -317,8 +319,8 @@ TEST(network_stream_test, readable_writeable_properties_roundtrip)
 
 TEST(network_stream_test, read_write_byte_success)
 {
-    auto listener = std::make_shared<exa::socket>(address_family::inter_network, socket_type::stream, protocol_type::tcp);
-    auto client = std::make_shared<exa::socket>(address_family::inter_network, socket_type::stream, protocol_type::tcp);
+    auto listener = std::make_unique<exa::socket>(address_family::inter_network, socket_type::stream, protocol_type::tcp);
+    auto client = std::make_unique<exa::socket>(address_family::inter_network, socket_type::stream, protocol_type::tcp);
 
     listener->bind(address::loopback, 0);
     listener->listen(1);
@@ -327,21 +329,21 @@ TEST(network_stream_test, read_write_byte_success)
     auto server = listener->accept_async().get();
     f.get();
 
-    auto server_stream = std::make_shared<network_stream>(server);
-    auto client_stream = std::make_shared<network_stream>(client);
+    auto server_stream = std::make_unique<network_stream>(server.get());
+    auto client_stream = std::make_unique<network_stream>(client.get());
 
     for (uint8_t i = 0; i < 10; ++i)
     {
-        auto read = task::run([=] { return client_stream->read_byte(); });
-        task::run([=] { server_stream->write_byte(i); }).get();
+        auto read = task::run([=, &client_stream] { return client_stream->read_byte(); });
+        task::run([=, &server_stream] { server_stream->write_byte(i); }).get();
         ASSERT_THAT(read.get(), Eq(i));
     }
 }
 
 TEST(network_stream_test, read_write_array_success)
 {
-    auto listener = std::make_shared<exa::socket>(address_family::inter_network, socket_type::stream, protocol_type::tcp);
-    auto client = std::make_shared<exa::socket>(address_family::inter_network, socket_type::stream, protocol_type::tcp);
+    auto listener = std::make_unique<exa::socket>(address_family::inter_network, socket_type::stream, protocol_type::tcp);
+    auto client = std::make_unique<exa::socket>(address_family::inter_network, socket_type::stream, protocol_type::tcp);
 
     listener->bind(address::loopback, 0);
     listener->listen(1);
@@ -350,8 +352,8 @@ TEST(network_stream_test, read_write_array_success)
     auto server = listener->accept_async().get();
     f.get();
 
-    auto server_stream = std::make_shared<network_stream>(server);
-    auto client_stream = std::make_shared<network_stream>(client);
+    auto server_stream = std::make_unique<network_stream>(server.get());
+    auto client_stream = std::make_unique<network_stream>(client.get());
 
     std::vector<uint8_t> client_data(42, 1);
     client_stream->write(client_data);
@@ -364,8 +366,8 @@ TEST(network_stream_test, read_write_array_success)
 
 TEST(network_stream_test, read_timeout_expires_throws)
 {
-    auto listener = std::make_shared<exa::socket>(address_family::inter_network, socket_type::stream, protocol_type::tcp);
-    auto client = std::make_shared<exa::socket>(address_family::inter_network, socket_type::stream, protocol_type::tcp);
+    auto listener = std::make_unique<exa::socket>(address_family::inter_network, socket_type::stream, protocol_type::tcp);
+    auto client = std::make_unique<exa::socket>(address_family::inter_network, socket_type::stream, protocol_type::tcp);
 
     listener->bind(address::loopback, 0);
     listener->listen(1);
@@ -374,7 +376,7 @@ TEST(network_stream_test, read_timeout_expires_throws)
     auto server = listener->accept_async().get();
     f.get();
 
-    auto server_stream = std::make_shared<network_stream>(server);
+    auto server_stream = std::make_unique<network_stream>(server.get());
     std::vector<uint8_t> buffer(1, 1);
 
     server_stream->read_timeout(1ms);
@@ -383,8 +385,8 @@ TEST(network_stream_test, read_timeout_expires_throws)
 
 TEST(network_stream_test, timeout_valid_data_roundtrip)
 {
-    auto listener = std::make_shared<exa::socket>(address_family::inter_network, socket_type::stream, protocol_type::tcp);
-    auto client = std::make_shared<exa::socket>(address_family::inter_network, socket_type::stream, protocol_type::tcp);
+    auto listener = std::make_unique<exa::socket>(address_family::inter_network, socket_type::stream, protocol_type::tcp);
+    auto client = std::make_unique<exa::socket>(address_family::inter_network, socket_type::stream, protocol_type::tcp);
 
     listener->bind(address::loopback, 0);
     listener->listen(1);
@@ -393,7 +395,7 @@ TEST(network_stream_test, timeout_valid_data_roundtrip)
     auto server = listener->accept_async().get();
     f.get();
 
-    auto server_stream = std::make_shared<network_stream>(server);
+    auto server_stream = std::make_unique<network_stream>(server.get());
 
     server_stream->read_timeout(100ms);
     ASSERT_THAT(server_stream->read_timeout(), Eq(100ms));
@@ -431,8 +433,8 @@ TEST(network_stream_test, copy_to_async_all_data_copied)
     for (auto count : {1, 1024, 4096, 4095, 1024 * 1024})
     {
         auto listener =
-            std::make_shared<exa::socket>(address_family::inter_network, socket_type::stream, protocol_type::tcp);
-        auto client = std::make_shared<exa::socket>(address_family::inter_network, socket_type::stream, protocol_type::tcp);
+            std::make_unique<exa::socket>(address_family::inter_network, socket_type::stream, protocol_type::tcp);
+        auto client = std::make_unique<exa::socket>(address_family::inter_network, socket_type::stream, protocol_type::tcp);
 
         listener->bind(address::loopback, 0);
         listener->listen(1);
@@ -441,10 +443,10 @@ TEST(network_stream_test, copy_to_async_all_data_copied)
         auto server = listener->accept_async().get();
         f.wait();
 
-        auto server_stream = std::make_shared<network_stream>(server);
-        auto client_stream = std::make_shared<network_stream>(client);
+        auto server_stream = std::make_unique<network_stream>(server.get());
+        auto client_stream = std::make_unique<network_stream>(client.get());
 
-        auto results = std::make_shared<memory_stream>();
+        auto results = std::make_unique<memory_stream>();
         std::vector<uint8_t> data(count);
 
         for (auto& b : data)
@@ -452,7 +454,7 @@ TEST(network_stream_test, copy_to_async_all_data_copied)
             b = dis(gen);
         }
 
-        auto copy = client_stream->copy_to_async(results);
+        auto copy = client_stream->copy_to_async(results.get());
         server_stream->write_async(data).wait();
         server_stream->close();
         copy.wait();
@@ -464,8 +466,8 @@ TEST(network_stream_test, copy_to_async_all_data_copied)
 
 TEST(network_stream_test, copy_to_async_invalid_arguments_throw)
 {
-    auto listener = std::make_shared<exa::socket>(address_family::inter_network, socket_type::stream, protocol_type::tcp);
-    auto client = std::make_shared<exa::socket>(address_family::inter_network, socket_type::stream, protocol_type::tcp);
+    auto listener = std::make_unique<exa::socket>(address_family::inter_network, socket_type::stream, protocol_type::tcp);
+    auto client = std::make_unique<exa::socket>(address_family::inter_network, socket_type::stream, protocol_type::tcp);
 
     listener->bind(address::loopback, 0);
     listener->listen(1);
@@ -474,21 +476,21 @@ TEST(network_stream_test, copy_to_async_invalid_arguments_throw)
     auto server = listener->accept_async().get();
     f.wait();
 
-    auto server_stream = std::make_shared<network_stream>(server);
-    auto client_stream = std::make_shared<network_stream>(client);
-    auto ms = std::make_shared<memory_stream>(std::vector<uint8_t>());
+    auto server_stream = std::make_unique<network_stream>(server.get());
+    auto client_stream = std::make_unique<network_stream>(client.get());
+    auto ms = std::make_unique<memory_stream>(std::vector<uint8_t>());
 
     ASSERT_THROW(server_stream->copy_to_async(nullptr).get(), std::invalid_argument);
     client_stream->write_byte(42);
-    ASSERT_THROW(server_stream->copy_to_async(ms).get(), std::runtime_error);
-    ASSERT_THROW(server_stream->copy_to_async(std::make_shared<memory_stream>(), 0).get(), std::out_of_range);
-    ASSERT_THROW(server_stream->copy_to_async(std::make_shared<memory_stream>(), -1).get(), std::out_of_range);
+    ASSERT_THROW(server_stream->copy_to_async(ms.get()).get(), std::runtime_error);
+    ASSERT_THROW(server_stream->copy_to_async(nullptr, 0).get(), std::invalid_argument);
+    ASSERT_THROW(server_stream->copy_to_async(nullptr, -1).get(), std::invalid_argument);
 }
 
 TEST(network_stream_test, copy_to_async_close_stream_throws_on_windows_no_throw_on_unix)
 {
-    auto listener = std::make_shared<exa::socket>(address_family::inter_network, socket_type::stream, protocol_type::tcp);
-    auto client = std::make_shared<exa::socket>(address_family::inter_network, socket_type::stream, protocol_type::tcp);
+    auto listener = std::make_unique<exa::socket>(address_family::inter_network, socket_type::stream, protocol_type::tcp);
+    auto client = std::make_unique<exa::socket>(address_family::inter_network, socket_type::stream, protocol_type::tcp);
 
     listener->bind(address::loopback, 0);
     listener->listen(1);
@@ -497,21 +499,22 @@ TEST(network_stream_test, copy_to_async_close_stream_throws_on_windows_no_throw_
     auto server = listener->accept_async().get();
     f.wait();
 
-    auto server_stream = std::make_shared<network_stream>(server);
-    auto client_stream = std::make_shared<network_stream>(client);
-    auto copy = server_stream->copy_to_async(std::make_shared<memory_stream>());
+    auto memory_stream = std::make_unique<exa::memory_stream>(1024);
+    auto server_stream = std::make_unique<network_stream>(server.get());
+    auto client_stream = std::make_unique<network_stream>(client.get());
+    auto copy = server_stream->copy_to_async(memory_stream.get());
     server_stream->close();
 
 #ifdef _WIN32
     ASSERT_THROW(copy.get(), std::runtime_error);
 #endif
-    ASSERT_THROW(server_stream->copy_to_async(std::make_shared<memory_stream>()).get(), std::runtime_error);
+    ASSERT_THROW(server_stream->copy_to_async(memory_stream.get()).get(), std::runtime_error);
 }
 
 TEST(network_stream_test, copy_to_async_non_readable_source_stream_throws)
 {
-    auto listener = std::make_shared<exa::socket>(address_family::inter_network, socket_type::stream, protocol_type::tcp);
-    auto client = std::make_shared<exa::socket>(address_family::inter_network, socket_type::stream, protocol_type::tcp);
+    auto listener = std::make_unique<exa::socket>(address_family::inter_network, socket_type::stream, protocol_type::tcp);
+    auto client = std::make_unique<exa::socket>(address_family::inter_network, socket_type::stream, protocol_type::tcp);
 
     listener->bind(address::loopback, 0);
     listener->listen(1);
@@ -520,7 +523,8 @@ TEST(network_stream_test, copy_to_async_non_readable_source_stream_throws)
     auto server = listener->accept_async().get();
     f.wait();
 
-    auto server_stream = std::make_shared<network_stream>(server, file_access::write);
+    auto memory_stream = std::make_unique<exa::memory_stream>(1024);
+    auto server_stream = std::make_unique<network_stream>(server.get(), file_access::write);
 
-    ASSERT_THROW(server_stream->copy_to_async(std::make_shared<memory_stream>()).get(), std::runtime_error);
+    ASSERT_THROW(server_stream->copy_to_async(memory_stream.get()).get(), std::runtime_error);
 }

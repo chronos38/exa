@@ -12,9 +12,9 @@ namespace exa
     public:
         network_stream() = delete;
         network_stream(const network_stream&) = delete;
-        network_stream(const std::shared_ptr<socket>& socket, bool owns = false);
-        network_stream(const std::shared_ptr<socket>& socket, file_access access, bool owns = false);
-        virtual ~network_stream();
+        network_stream(exa::socket* socket, bool owns = false);
+        network_stream(exa::socket* socket, file_access access, bool owns = false);
+        virtual ~network_stream() = default;
 
         // Inherited via stream
         virtual bool can_read() const override;
@@ -51,9 +51,9 @@ namespace exa
 
         virtual void close() override;
 
-        virtual std::future<void> copy_to_async(std::shared_ptr<stream> s) override;
+        virtual std::future<void> copy_to_async(stream* s) override;
 
-        virtual std::future<void> copy_to_async(std::shared_ptr<stream> s, std::streamsize buffer_size) override;
+        virtual std::future<void> copy_to_async(stream* s, std::streamsize buffer_size) override;
 
         virtual void flush() override;
 
@@ -72,11 +72,16 @@ namespace exa
         // Specific to network_stream
         bool data_available() const;
 
-        const std::shared_ptr<socket>& socket() const;
+        socket* socket() const;
 
     private:
-        std::shared_ptr<exa::socket> socket_;
-        bool owns_;
+        struct network_stream_deleter
+        {
+            bool owns = false;
+            void operator()(exa::socket* s) const noexcept;
+        };
+
+        std::unique_ptr<exa::socket, network_stream_deleter> socket_;
         bool readable_ = false;
         bool writable_ = false;
     };

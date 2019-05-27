@@ -10,26 +10,33 @@ namespace exa
     class lockable
     {
     public:
-        virtual ~lockable() = default;
+        virtual ~lockable()
+        {
+            if (mutex_)
+            {
+                delete mutex_;
+                mutex_ = nullptr;
+            }
+        }
 
         constexpr void lock() const
         {
-            mutex_.lock();
+            mutex_->lock();
         }
 
         constexpr void unlock() const
         {
-            mutex_.unlock();
+            mutex_->unlock();
         }
 
         constexpr bool try_lock() const
         {
-            return mutex_.try_lock();
+            return mutex_->try_lock();
         }
 
         constexpr operator Mutex() const
         {
-            return mutex_;
+            return *mutex_;
         }
 
         constexpr Mutex& mutex() const
@@ -38,7 +45,7 @@ namespace exa
         }
 
     private:
-        mutable Mutex mutex_;
+        Mutex* mutex_ = new Mutex();
     };
 
     struct lock
